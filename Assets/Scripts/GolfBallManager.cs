@@ -5,6 +5,7 @@ using UnityEngine.UI;
 
 public class GolfBallManager : MonoBehaviour
 {
+    private PlayerInfo player;
     private Vector3 mouseStarterPos, mousePos;
     private bool planningShot = false;
     private GameObject powerBar, triRotator, tri;
@@ -12,10 +13,12 @@ public class GolfBallManager : MonoBehaviour
     private Rigidbody golfBallRb;
     private float bounciness = .8f, friction = .01f;
     private Vector3 curVel = new Vector3(0, 0, 0), lastFrameVel = new Vector3(0, 0, 0);
+    private bool applyFriction = false;
     
     // Start is called before the first frame update
     void Start()
     {
+        player = PlayerInfo.GetPlayers()[0];
         powerBar = GameObject.Find("PowerBar");
         powerBar.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 0);
         powerBar.GetComponent<Image>().color = GetBarColor();
@@ -101,6 +104,10 @@ public class GolfBallManager : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
+        //Ball is touching an object; apply friction
+        applyFriction = true;
+
+        //If the ball collides with a bouncy surface, bounce off of it
         if (collision.gameObject.CompareTag("Bouncy"))
         {
             Physics.Raycast(transform.position, collision.transform.position - transform.position, out RaycastHit hitInfo);
@@ -109,5 +116,41 @@ public class GolfBallManager : MonoBehaviour
             golfBallRb.velocity *= bounciness;
             curVel = golfBallRb.velocity;
         }
+        
+        //If the ball collides with an enemy...
+        if (collision.gameObject.CompareTag("Enemy"))
+        {
+            //...and kills it, gain the exp reward, destroy the enemy, and continue onwards
+            if (collision.gameObject.GetComponent<Enemy>().TakeDamage(lastFrameVel.magnitude))
+            {
+                player.GainEXP(collision.gameObject.GetComponent<Enemy>().expReward);
+                Destroy(collision.gameObject);
+                golfBallRb.velocity = lastFrameVel;
+                curVel = golfBallRb.velocity;
+            }
+            //...and doesn't kill it, bounce off the enemy
+            else
+            {
+                Physics.Raycast(transform.position, collision.transform.position - transform.position, out RaycastHit hitInfo);
+                golfBallRb.velocity = lastFrameVel;
+                golfBallRb.velocity -= 2 * Vector3.Dot(golfBallRb.velocity, hitInfo.normal) * hitInfo.normal;
+                golfBallRb.velocity *= collision.gameObject.GetComponent<Enemy>().bounciness;
+                curVel = golfBallRb.velocity;
+            }
+        }
+    }
+
+    private void OnCollisionStay(Collision collision)
+    {
+        /* Ensures that, when the ball is touching multiple objects and
+         * stops touching only one, friction is still being applied.
+         */
+        applyFriction = true;
+    }
+
+    private void OnCollisionExit(Collision collision)
+    {
+        //Ball is no longer touching object, stop applying friction
+        applyFriction = false;
     }
 }
