@@ -5,11 +5,21 @@ using UnityEngine.UI;
 
 public class GolfBallManager : MonoBehaviour
 {
+    //Leveling system vars
     private PlayerInfo player;
+    private GameObject expBar;
+    private TMPro.TextMeshProUGUI expText;
+    private int playerLevel;
+    private bool waitingForLevelUp = false;
+
+    //Hitting the ball vars
+    private GameObject camRotator;
     private Vector3 mouseStarterPos, mousePos;
-    private bool planningShot = false;
+    private bool planningShot = false, mouseOverLevelUp = false;
     private GameObject powerBar, triRotator, tri;
     private float barPercentage = 0;
+
+    //Ball physics vars
     private Rigidbody golfBallRb;
     private float bounciness = .8f, friction = .01f;
     private Vector3 curVel = new Vector3(0, 0, 0), lastFrameVel = new Vector3(0, 0, 0);
@@ -18,8 +28,20 @@ public class GolfBallManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        player = PlayerInfo.GetPlayers()[0];
-        powerBar = GameObject.Find("PowerBar");
+        if (PlayerInfo.GetPlayers().Count == 0)
+        {
+            player = new PlayerInfo();
+        }
+        else
+        {
+            player = PlayerInfo.GetPlayers()[0];
+        }
+        camRotator = GameObject.Find("Camera Rotator");
+        powerBar = GameObject.Find("Power Bar");
+        expBar = GameObject.Find("Exp Bar");
+        expBar.GetComponent<Image>().color = Color.green;
+        expText = GameObject.Find("Exp Text").GetComponent<TMPro.TextMeshProUGUI>();
+        UpdateExpBar();
         powerBar.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 0);
         powerBar.GetComponent<Image>().color = GetBarColor();
         triRotator = GameObject.Find("Tri Rotator");
@@ -34,22 +56,25 @@ public class GolfBallManager : MonoBehaviour
         //Keeps track of the golf ball's velocity for collisions
         lastFrameVel = curVel;
         curVel = golfBallRb.velocity;
-        
+
         //Friction
-        if (golfBallRb.velocity.magnitude > friction)
+        if (applyFriction)
         {
-            golfBallRb.velocity -= golfBallRb.velocity.normalized * friction;
-        }
-        else if (golfBallRb.velocity.magnitude != 0)
-        {
-            golfBallRb.velocity = Vector3.zero;
+            if (golfBallRb.velocity.magnitude > friction)
+            {
+                golfBallRb.velocity -= golfBallRb.velocity.normalized * friction;
+            }
+            else if (golfBallRb.velocity.magnitude != 0)
+            {
+                golfBallRb.velocity = Vector3.zero;
+            }
         }
 
         //Can't fire a shot if the golf ball is moving
         if (golfBallRb.velocity == new Vector3(0, 0, 0))
         {
             //If the player releases lmb, fire shot
-            if (Input.GetMouseButtonUp(0))
+            if (Input.GetMouseButtonUp(0) && planningShot)
             {
                 planningShot = false;
                 golfBallRb.AddForce(50 * barPercentage * (tri.transform.position - triRotator.transform.position),
@@ -58,11 +83,22 @@ public class GolfBallManager : MonoBehaviour
                 powerBar.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 0);
                 barPercentage = 0;
                 powerBar.GetComponent<Image>().color = GetBarColor();
+
+                if (player.GainEXP(50))
+                {
+                    waitingForLevelUp = true;
+                    LevelUpNotif();
+                }
+                else if (!waitingForLevelUp)
+                {
+                    UpdateExpBar();
+                }
             }
 
             if (planningShot)
             {
                 mousePos = Input.mousePosition;
+                transform.rotation = camRotator.transform.rotation;
                 Vector3 mouseDif = new Vector3(mousePos.x - mouseStarterPos.x, 0, mousePos.y - mouseStarterPos.y);
                 if (mouseDif.magnitude == 0)
                 {
@@ -71,6 +107,7 @@ public class GolfBallManager : MonoBehaviour
                 tri.SetActive(true);
                 Vector3 triDif = tri.transform.position - triRotator.transform.position;
                 triRotator.transform.rotation *= Quaternion.FromToRotation(triDif, -mouseDif);
+                triRotator.transform.rotation *= transform.rotation;
                 if (triRotator.transform.rotation.eulerAngles.x != 0 || triRotator.transform.rotation.eulerAngles.z != 0)
                 {
                     triRotator.transform.rotation = Quaternion.Euler(0, triRotator.transform.rotation.eulerAngles.y, 0);
@@ -89,10 +126,11 @@ public class GolfBallManager : MonoBehaviour
             }
 
             //If the player clicks down lmb, begin planning shot
-            if (Input.GetMouseButtonDown(0))
+            if (Input.GetMouseButtonDown(0) && !mouseOverLevelUp)
             {
                 planningShot = true;
                 mouseStarterPos = Input.mousePosition;
+                transform.rotation = camRotator.transform.rotation; 
             }
         }
     }
@@ -100,6 +138,16 @@ public class GolfBallManager : MonoBehaviour
     private Color GetBarColor()
     {
         return Color.red * Mathf.Sqrt(barPercentage) + Color.green * Mathf.Sqrt(1 - barPercentage);
+    }
+
+    public void MouseIsOverLevelUp()
+    {
+        mouseOverLevelUp = true;
+    }
+
+    public void MouseNotOverLevelUp()
+    {
+        mouseOverLevelUp = false;
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -123,7 +171,15 @@ public class GolfBallManager : MonoBehaviour
             //...and kills it, gain the exp reward, destroy the enemy, and continue onwards
             if (collision.gameObject.GetComponent<Enemy>().TakeDamage(lastFrameVel.magnitude))
             {
-                player.GainEXP(collision.gameObject.GetComponent<Enemy>().expReward);
+                if (player.GainEXP(collision.gameObject.GetComponent<Enemy>().expReward))
+                {
+                    waitingForLevelUp = true;
+                    LevelUpNotif();
+                }
+                else if (!waitingForLevelUp)
+                {
+                    UpdateExpBar();
+                }
                 Destroy(collision.gameObject);
                 golfBallRb.velocity = lastFrameVel;
                 curVel = golfBallRb.velocity;
@@ -152,5 +208,31 @@ public class GolfBallManager : MonoBehaviour
     {
         //Ball is no longer touching object, stop applying friction
         applyFriction = false;
+    }
+
+    public void UpdateExpBar()
+    {
+        expBar.GetComponent<RectTransform>().sizeDelta = new Vector2(400f * player.GetLevelExp() /
+                                                PlayerInfo.LEVEL_EXP_THRESHOLDS[player.GetLevel()], 120);
+        expText.text = player.GetLevelExp() + " / " + PlayerInfo.LEVEL_EXP_THRESHOLDS[player.GetLevel()];
+    }
+
+    public void LevelUpNotif()
+    {
+        expBar.GetComponent<RectTransform>().sizeDelta = new Vector2(400, 120);
+        expText.text = "Click Here to Level Up!";
+    }
+
+    public void LevelUpBonus()
+    {
+        if (waitingForLevelUp)
+        {
+            playerLevel++;
+            if (playerLevel == player.GetLevel())
+            {
+                waitingForLevelUp = false;
+                UpdateExpBar();
+            }
+        }
     }
 }

@@ -5,11 +5,20 @@ using UnityEngine;
 public class PlayerInfo
 {
     /* ABILITY CODES
-     * 1 = Chip Shot
-     * 2 = Jump
+     * 0 = Chip Shot
+     * 1 = Jump
+     * 2 =
+     * 3 =
+     * 4 =
+     * 5 =
+     * 6 =
+     * 7 =
+     * 8 =
+     * 9 =
+     * 10 =
      */
     
-    public static readonly int[] LEVEL_EXP_THRESHOLDS = new int[] { 0, int.MaxValue };
+    public static readonly int[] LEVEL_EXP_THRESHOLDS = new int[] { 0, 100, 150, 200, 250, 100000 };
 
     private static List<PlayerInfo> players = new List<PlayerInfo>();
 
@@ -32,14 +41,28 @@ public class PlayerInfo
         return players;
     }
 
-    public void GainEXP(int expIn)
+    public int GetLevel()
+    {
+        return level;
+    }
+
+    //Returns how much exp the player has gained this level
+    public int GetLevelExp()
+    {
+        return levelExp;
+    }
+
+    //Returns true if the exp gained caused the player to level up, false otherwise
+    public bool GainEXP(int expIn)
     {
         totalExp += expIn;
         levelExp += expIn;
         if (levelExp >= LEVEL_EXP_THRESHOLDS[level])
         {
             LevelUp();
+            return true;
         }
+        return false;
     }
 
     private void LevelUp()
