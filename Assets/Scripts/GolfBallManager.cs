@@ -9,8 +9,16 @@ public class GolfBallManager : MonoBehaviour
     private PlayerInfo player;
     private GameObject expBar;
     private TMPro.TextMeshProUGUI expText;
-    private int playerLevel;
+    private int playerLevel = 1;
     private bool waitingForLevelUp = false;
+    private GameObject levelUpUIBackground;
+    private LevelUpRewardUI[] levelUpRewardUIs;
+    private bool inLevelUpScreen = false, waitingForLevelUpAnim = false;
+    private int levelUpAnimCount = 0;
+
+    //Ability use vars
+    private int nextAbilityKey = 1;
+    private KeyCode[] abilityKeys = new KeyCode[11];
 
     //Hitting the ball vars
     private GameObject camRotator;
@@ -42,6 +50,14 @@ public class GolfBallManager : MonoBehaviour
         expBar.GetComponent<Image>().color = Color.green;
         expText = GameObject.Find("Exp Text").GetComponent<TMPro.TextMeshProUGUI>();
         UpdateExpBar();
+        levelUpUIBackground = GameObject.Find("Level Up Background");
+        levelUpRewardUIs = new LevelUpRewardUI[5];
+        levelUpRewardUIs[0] = GameObject.Find("Level Up 21").GetComponent<LevelUpRewardUI>();
+        levelUpRewardUIs[1] = GameObject.Find("Level Up 22").GetComponent<LevelUpRewardUI>();
+        levelUpRewardUIs[2] = GameObject.Find("Level Up 31").GetComponent<LevelUpRewardUI>();
+        levelUpRewardUIs[3] = GameObject.Find("Level Up 32").GetComponent<LevelUpRewardUI>();
+        levelUpRewardUIs[4] = GameObject.Find("Level Up 33").GetComponent<LevelUpRewardUI>();
+
         powerBar.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 0);
         powerBar.GetComponent<Image>().color = GetBarColor();
         triRotator = GameObject.Find("Tri Rotator");
@@ -70,8 +86,8 @@ public class GolfBallManager : MonoBehaviour
             }
         }
 
-        //Can't fire a shot if the golf ball is moving
-        if (golfBallRb.velocity == new Vector3(0, 0, 0))
+        //Can't fire a shot if the golf ball is moving or if player is leveling up
+        if (golfBallRb.velocity == new Vector3(0, 0, 0) && !inLevelUpScreen)
         {
             //If the player releases lmb, fire shot
             if (Input.GetMouseButtonUp(0) && planningShot)
@@ -225,14 +241,119 @@ public class GolfBallManager : MonoBehaviour
 
     public void LevelUpBonus()
     {
-        if (waitingForLevelUp)
+        if (waitingForLevelUp && !inLevelUpScreen)
         {
+            inLevelUpScreen = true;
+            waitingForLevelUpAnim = true;
             playerLevel++;
+            switch (playerLevel)
+            {
+                case 2:
+                    levelUpRewardUIs[0].gameObject.SetActive(true);
+                    levelUpRewardUIs[0].SetLevelUpUI(0);
+                    levelUpRewardUIs[1].gameObject.SetActive(true);
+                    levelUpRewardUIs[1].SetLevelUpUI(1);
+                    levelUpRewardUIs[2].gameObject.SetActive(false);
+                    levelUpRewardUIs[3].gameObject.SetActive(false);
+                    levelUpRewardUIs[4].gameObject.SetActive(false);
+                    break;
+                case 3:
+                    levelUpRewardUIs[0].gameObject.SetActive(false);
+                    levelUpRewardUIs[1].gameObject.SetActive(false);
+                    levelUpRewardUIs[2].gameObject.SetActive(true);
+                    levelUpRewardUIs[2].SetLevelUpUI(2);
+                    levelUpRewardUIs[2].AddDesc("Press " + nextAbilityKey + " to activate.");
+                    levelUpRewardUIs[3].gameObject.SetActive(true);
+                    levelUpRewardUIs[3].SetLevelUpUI(3);
+                    levelUpRewardUIs[3].AddDesc("Press " + nextAbilityKey + " to activate.");
+                    levelUpRewardUIs[4].gameObject.SetActive(true);
+                    levelUpRewardUIs[4].SetLevelUpUI(4);
+                    break;
+                default:
+                    levelUpRewardUIs[0].gameObject.SetActive(false);
+                    levelUpRewardUIs[1].gameObject.SetActive(false);
+                    levelUpRewardUIs[2].gameObject.SetActive(true);
+                    levelUpRewardUIs[3].gameObject.SetActive(true);
+                    levelUpRewardUIs[4].gameObject.SetActive(true);
+                    break;
+            }
+            InvokeRepeating("LevelUpUIEnterAnim", 0, 1 / 60f);
             if (playerLevel == player.GetLevel())
             {
                 waitingForLevelUp = false;
                 UpdateExpBar();
             }
+        }
+    }
+
+    public bool IsWaitingForLevelUpAnim()
+    {
+        return waitingForLevelUpAnim;
+    }
+
+    private void LevelUpUIEnterAnim()
+    {
+        levelUpAnimCount++;
+        levelUpUIBackground.GetComponent<RectTransform>().localPosition = new Vector3(0, 1920 * (1 - Mathf.Sin(Mathf.PI
+                                                                                      * levelUpAnimCount / 120)), 0);
+        if (levelUpAnimCount == 60)
+        {
+            CancelInvoke();
+            levelUpUIBackground.GetComponent<RectTransform>().localPosition = new Vector3(0, 0, 0);
+            waitingForLevelUpAnim = false;
+        }
+    }
+
+    public void SelectReward(int abilityCode)
+    {
+        waitingForLevelUpAnim = true;
+        player.GainAbility(abilityCode);
+        if (PlayerInfo.IS_GENERIC_KEY[abilityCode])
+        {
+            abilityKeys[abilityCode] = GetNextKey();
+        }
+        InvokeRepeating("LevelUpUIExitAnim", 0, 1 / 60f);
+    }
+
+    private KeyCode GetNextKey()
+    {
+        switch (nextAbilityKey)
+        {
+            case 1:
+                return KeyCode.Alpha1;
+            case 2:
+                return KeyCode.Alpha2;
+            case 3:
+                return KeyCode.Alpha3;
+            case 4:
+                return KeyCode.Alpha4;
+            case 5:
+                return KeyCode.Alpha5;
+            case 6:
+                return KeyCode.Alpha6;
+            case 7:
+                return KeyCode.Alpha7;
+            case 8:
+                return KeyCode.Alpha8;
+            case 9:
+                return KeyCode.Alpha9;
+            case 10:
+                return KeyCode.Alpha0;
+        }
+        throw new System.Exception("Too many generic-key triggerable abilities assigned to player");
+    }
+
+    private void LevelUpUIExitAnim()
+    {
+        levelUpAnimCount--;
+        levelUpUIBackground.GetComponent<RectTransform>().localPosition = new Vector3(0, 1920 * (1 - Mathf.Sin(Mathf.PI
+                                                                                      * levelUpAnimCount / 120)), 0);
+        if (levelUpAnimCount == 0)
+        {
+            CancelInvoke();
+            levelUpUIBackground.GetComponent<RectTransform>().localPosition = new Vector3(0, 1920, 0);
+            waitingForLevelUpAnim = false;
+            inLevelUpScreen = false;
         }
     }
 }
