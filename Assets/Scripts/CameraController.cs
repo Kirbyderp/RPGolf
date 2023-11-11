@@ -7,8 +7,8 @@ public class CameraController : MonoBehaviour
 {
     private GameObject camRotator, golfBall;
     private float speed = 120;
-    KeyCode clockwise = KeyCode.RightArrow;
-    KeyCode counterClockwise = KeyCode.LeftArrow;
+    KeyCode clockwise = KeyCode.A;
+    KeyCode counterClockwise = KeyCode.D;
 
 
     // Start is called before the first frame update

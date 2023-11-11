@@ -19,6 +19,10 @@ public class GolfBallManager : MonoBehaviour
     //Ability use vars
     private int nextAbilityKey = 1;
     private KeyCode[] abilityKeys = new KeyCode[11];
+    private int timesJumped = 0;
+    private bool usedSpikeBall = false;
+    private bool usingFireball = false, usedFireball = false;
+    private float fireballTimer = 0, fireballDuration = 2;
 
     //Hitting the ball vars
     private GameObject camRotator;
@@ -26,12 +30,17 @@ public class GolfBallManager : MonoBehaviour
     private bool planningShot = false, mouseOverLevelUp = false;
     private GameObject powerBar, triRotator, tri;
     private float barPercentage = 0;
+    private int curShotType = 0; //0 = putt, 1 = chip, 2 = curve
 
     //Ball physics vars
     private Rigidbody golfBallRb;
-    private float bounciness = .8f, friction = .01f;
+    private float power = 50, bounciness = .8f, friction = 2.2f;
     private Vector3 curVel = new Vector3(0, 0, 0), lastFrameVel = new Vector3(0, 0, 0);
     private bool applyFriction = false;
+
+    //KeyCodes
+    KeyCode chipShotKey = KeyCode.W;
+    KeyCode jumpKey = KeyCode.Space;
     
     // Start is called before the first frame update
     void Start()
@@ -69,6 +78,11 @@ public class GolfBallManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (transform.position.y < -5)
+        {
+            ResetBallPosition();
+        }
+
         //Keeps track of the golf ball's velocity for collisions
         lastFrameVel = curVel;
         curVel = golfBallRb.velocity;
@@ -76,9 +90,10 @@ public class GolfBallManager : MonoBehaviour
         //Friction
         if (applyFriction)
         {
-            if (golfBallRb.velocity.magnitude > friction)
+            if (golfBallRb.velocity.magnitude > friction * (usedSpikeBall ? 2 : 1) * (usingFireball ? 0 : 1) * Time.deltaTime)
             {
-                golfBallRb.velocity -= golfBallRb.velocity.normalized * friction;
+                golfBallRb.velocity -= golfBallRb.velocity.normalized * friction * (usedSpikeBall ? 2 : 1)
+                                       * (usingFireball ? 0 : 1) * Time.deltaTime;
             }
             else if (golfBallRb.velocity.magnitude != 0)
             {
@@ -89,12 +104,58 @@ public class GolfBallManager : MonoBehaviour
         //Can't fire a shot if the golf ball is moving or if player is leveling up
         if (golfBallRb.velocity == new Vector3(0, 0, 0) && !inLevelUpScreen)
         {
+            if (usedSpikeBall)
+            {
+                Debug.Log("Deactivated Spike Ball");
+                usedSpikeBall = false;
+            }
+
+            //Allow changing shot type if player has ability(s)
+            if (player.HasAbility(0) && Input.GetKeyDown(chipShotKey))
+            {
+                if (curShotType == 1)
+                {
+                    curShotType = 0;
+                    Debug.Log("Current Shot Type: Putt");
+                }
+                else
+                {
+                    curShotType = 1;
+                    Debug.Log("Current Shot Type: Chip");
+                }
+            }
+
+            //Allow fireball activation if player has abhility
+            if (player.HasAbility(2) && Input.GetKeyDown(abilityKeys[2]) && !usedFireball)
+            {
+                if (usingFireball)
+                {
+                    Debug.Log("Cancelled Fireball");
+                    usingFireball = false;
+                }
+                else
+                {
+                    Debug.Log("Using Fireball");
+                    usingFireball = true;
+                }
+            }
+
             //If the player releases lmb, fire shot
             if (Input.GetMouseButtonUp(0) && planningShot)
             {
                 planningShot = false;
-                golfBallRb.AddForce(50 * barPercentage * (tri.transform.position - triRotator.transform.position),
-                                    ForceMode.Impulse);
+                if (curShotType == 1)
+                {
+                    golfBallRb.AddForce(power * barPercentage * (power * (tri.transform.position -
+                                        triRotator.transform.position).normalized + new Vector3(0, 7, 0)).normalized,
+                                        ForceMode.Impulse);
+                }
+                else
+                {
+                    golfBallRb.AddForce(power * barPercentage * (tri.transform.position - triRotator.transform.position).normalized,
+                                        ForceMode.Impulse);
+                }
+
                 tri.SetActive(false);
                 powerBar.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 0);
                 barPercentage = 0;
@@ -149,6 +210,39 @@ public class GolfBallManager : MonoBehaviour
                 transform.rotation = camRotator.transform.rotation; 
             }
         }
+        else if (golfBallRb.velocity.magnitude > 0) //During Shot Ability Activations
+        {
+            //Jump
+            if (player.HasAbility(1) && Input.GetKeyDown(jumpKey) && timesJumped < player.GetJumpsPerLevel())
+            {
+                Debug.Log("Jumped");
+                golfBallRb.AddForce(player.GetJumpStrength() * Vector3.up, ForceMode.Impulse);
+                timesJumped++;
+                if (timesJumped >= player.GetJumpsPerLevel())
+                {
+                    Debug.Log("Now out of jumps");
+                }
+            }
+
+            //Fireball
+            if (usingFireball)
+            {
+                fireballTimer += Time.deltaTime;
+                if (fireballTimer >= fireballDuration)
+                {
+                    Debug.Log("Fireball Duration Over");
+                    usingFireball = false;
+                    usedFireball = true;
+                }
+            }
+
+            //Spike Ball
+            if (player.HasAbility(3) && Input.GetKeyDown(abilityKeys[3]) && !usedSpikeBall)
+            {
+                Debug.Log("Activated Spike Ball");
+                usedSpikeBall = true;
+            }
+        }
     }
 
     private Color GetBarColor()
@@ -166,6 +260,12 @@ public class GolfBallManager : MonoBehaviour
         mouseOverLevelUp = false;
     }
 
+    public void ResetBallPosition()
+    {
+        transform.position = Vector3.zero;
+        golfBallRb.velocity = Vector3.zero;
+    }
+
     private void OnCollisionEnter(Collision collision)
     {
         //Ball is touching an object; apply friction
@@ -177,7 +277,7 @@ public class GolfBallManager : MonoBehaviour
             Physics.Raycast(transform.position, collision.transform.position - transform.position, out RaycastHit hitInfo);
             golfBallRb.velocity = lastFrameVel;
             golfBallRb.velocity -= 2 * Vector3.Dot(golfBallRb.velocity, hitInfo.normal) * hitInfo.normal;
-            golfBallRb.velocity *= bounciness;
+            golfBallRb.velocity *= usingFireball ? 1 : bounciness;
             curVel = golfBallRb.velocity;
         }
         
@@ -185,7 +285,8 @@ public class GolfBallManager : MonoBehaviour
         if (collision.gameObject.CompareTag("Enemy"))
         {
             //...and kills it, gain the exp reward, destroy the enemy, and continue onwards
-            if (collision.gameObject.GetComponent<Enemy>().TakeDamage(lastFrameVel.magnitude))
+            if (collision.gameObject.GetComponent<Enemy>().TakeDamage(lastFrameVel.magnitude * player.GetDamageBonus() *
+                (usedSpikeBall ? 4 : 1) * (usingFireball ? 4 : 1)))
             {
                 if (player.GainEXP(collision.gameObject.GetComponent<Enemy>().expReward))
                 {
@@ -241,7 +342,7 @@ public class GolfBallManager : MonoBehaviour
 
     public void LevelUpBonus()
     {
-        if (waitingForLevelUp && !inLevelUpScreen)
+        if (waitingForLevelUp && !inLevelUpScreen && golfBallRb.velocity == new Vector3(0, 0, 0))
         {
             inLevelUpScreen = true;
             waitingForLevelUpAnim = true;
@@ -268,6 +369,24 @@ public class GolfBallManager : MonoBehaviour
                     levelUpRewardUIs[3].AddDesc("Press " + nextAbilityKey + " to activate.");
                     levelUpRewardUIs[4].gameObject.SetActive(true);
                     levelUpRewardUIs[4].SetLevelUpUI(4);
+                    break;
+                case 4:
+                    levelUpRewardUIs[0].gameObject.SetActive(false);
+                    levelUpRewardUIs[1].gameObject.SetActive(false);
+                    levelUpRewardUIs[2].gameObject.SetActive(true);
+                    levelUpRewardUIs[2].SetLevelUpUI(5);
+                    levelUpRewardUIs[3].gameObject.SetActive(true);
+                    levelUpRewardUIs[3].SetLevelUpUI(6);
+                    levelUpRewardUIs[3].AddDesc("Press " + nextAbilityKey + " to activate.");
+                    levelUpRewardUIs[4].gameObject.SetActive(true);
+                    if (player.HasAbility(0))
+                    {
+                        levelUpRewardUIs[4].SetLevelUpUI(7);
+                    }
+                    else
+                    {
+                        levelUpRewardUIs[4].SetLevelUpUI(8);
+                    }
                     break;
                 default:
                     levelUpRewardUIs[0].gameObject.SetActive(false);
