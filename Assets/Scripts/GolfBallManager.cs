@@ -268,6 +268,10 @@ public class GolfBallManager : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
+        Debug.Log("Enter " + collision.gameObject.name);
+        Debug.Log("Enter " + collision.gameObject.tag);
+        Debug.Log("Enter " + collision.gameObject.CompareTag("Bouncy"));
+        
         //Ball is touching an object; apply friction
         applyFriction = true;
 
@@ -325,6 +329,10 @@ public class GolfBallManager : MonoBehaviour
     {
         //Ball is no longer touching object, stop applying friction
         applyFriction = false;
+
+        Debug.Log("Exit " + collision.gameObject.name);
+        Debug.Log("Exit " + collision.gameObject.tag);
+        Debug.Log("Exit " + collision.gameObject.CompareTag("Bouncy"));
     }
 
     public void UpdateExpBar()
