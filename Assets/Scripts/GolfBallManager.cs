@@ -28,9 +28,11 @@ public class GolfBallManager : MonoBehaviour
     private GameObject camRotator;
     private Vector3 mouseStarterPos, mousePos;
     private bool planningShot = false, mouseOverLevelUp = false;
-    private GameObject powerBar, triRotator, tri;
+    private GameObject powerBar, triRotator, tri, triRotatorCopy;
     private float barPercentage = 0;
     private int curShotType = 0; //0 = putt, 1 = chip, 2 = curve
+    private SirPuttAnimController sirPuttAnim;
+    private bool ballInAnim = false;
 
     //Ball physics vars
     private Rigidbody golfBallRb;
@@ -73,8 +75,11 @@ public class GolfBallManager : MonoBehaviour
         powerBar.GetComponent<Image>().color = GetBarColor();
         triRotator = GameObject.Find("Tri Rotator");
         tri = GameObject.Find("Tri");
+        triRotatorCopy = GameObject.Find("Tri Rotator Copy");
         tri.SetActive(false);
         golfBallRb = GetComponent<Rigidbody>();
+
+        sirPuttAnim = GameObject.Find("Sir Puttsalot").GetComponent<SirPuttAnimController>();
     }
 
     // Update is called once per frame
@@ -89,7 +94,7 @@ public class GolfBallManager : MonoBehaviour
         lastFrameVel = curVel;
         curVel = golfBallRb.velocity;
 
-        if (!ballHasStopped)
+        if (!ballHasStopped && !ballInAnim)
         {
             ballShotTime += Time.deltaTime;
             if (ballShotTime >= 10)
@@ -99,7 +104,7 @@ public class GolfBallManager : MonoBehaviour
         }
 
         //Friction
-        if (applyFriction)
+        if (applyFriction && !ballInAnim)
         {
             if (golfBallRb.velocity.magnitude > friction * (usedSpikeBall ? 2 : 1) * (usingFireball ? 0 : 1) * frictionTimeMod * Time.deltaTime)
             {
@@ -114,8 +119,8 @@ public class GolfBallManager : MonoBehaviour
             }
         }
 
-        //Can't fire a shot if the golf ball is moving or if player is leveling up
-        if (ballHasStopped && !inLevelUpScreen)
+        //Can't fire a shot if the golf ball is moving, if player is leveling up, or if in animation
+        if (ballHasStopped && !inLevelUpScreen && !ballInAnim)
         {
             if (usedSpikeBall)
             {
@@ -158,33 +163,9 @@ public class GolfBallManager : MonoBehaviour
             {
                 planningShot = false;
                 ballHasStopped = false;
-                golfBallRb.constraints = RigidbodyConstraints.None;
-                if (curShotType == 1)
-                {
-                    golfBallRb.AddForce(power * barPercentage * (power * (tri.transform.position -
-                                        triRotator.transform.position).normalized + new Vector3(0, 7, 0)).normalized,
-                                        ForceMode.Impulse);
-                }
-                else
-                {
-                    golfBallRb.AddForce(power * barPercentage * (tri.transform.position - triRotator.transform.position).normalized,
-                                        ForceMode.Impulse);
-                }
-
-                tri.SetActive(false);
-                powerBar.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 0);
-                barPercentage = 0;
-                powerBar.GetComponent<Image>().color = GetBarColor();
-
-                if (player.GainEXP(50))
-                {
-                    waitingForLevelUp = true;
-                    LevelUpNotif();
-                }
-                else if (!waitingForLevelUp)
-                {
-                    UpdateExpBar();
-                }
+                ballInAnim = true;
+                sirPuttAnim.Swing();
+                StartCoroutine(WaitForBallSwing());
             }
 
             if (planningShot)
@@ -204,6 +185,7 @@ public class GolfBallManager : MonoBehaviour
                 {
                     triRotator.transform.rotation = Quaternion.Euler(0, triRotator.transform.rotation.eulerAngles.y, 0);
                 }
+                triRotatorCopy.transform.rotation = triRotator.transform.rotation;
                 if (mouseDif.magnitude < 250)
                 {
                     powerBar.GetComponent<RectTransform>().sizeDelta = new Vector2(150, mouseDif.magnitude * 700 / 250);
@@ -281,21 +263,62 @@ public class GolfBallManager : MonoBehaviour
         golfBallRb.velocity = Vector3.zero;
     }
 
+    IEnumerator WaitForBallSwing()
+    {
+        yield return new WaitForSeconds(55 / 60f);
+        golfBallRb.constraints = RigidbodyConstraints.None;
+        if (curShotType == 1)
+        {
+            golfBallRb.AddForce(power * barPercentage * (power * (tri.transform.position -
+                                triRotator.transform.position).normalized + new Vector3(0, 7, 0)).normalized,
+                                ForceMode.Impulse);
+        }
+        else
+        {
+            golfBallRb.AddForce(power * barPercentage * (tri.transform.position - triRotator.transform.position).normalized,
+                                ForceMode.Impulse);
+        }
+
+        tri.SetActive(false);
+        powerBar.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 0);
+        barPercentage = 0;
+        powerBar.GetComponent<Image>().color = GetBarColor();
+
+        if (player.GainEXP(50))
+        {
+            waitingForLevelUp = true;
+            LevelUpNotif();
+        }
+        else if (!waitingForLevelUp)
+        {
+            UpdateExpBar();
+        }
+
+        ballInAnim = false;
+    }
+
     IEnumerator BallStopCheck()
     {
         yield return new WaitForSeconds(1);
         if (golfBallRb.velocity.magnitude < friction * (usedSpikeBall ? 2 : 1) * frictionTimeMod * Time.deltaTime)
         {
+            ballInAnim = true;
             golfBallRb.velocity = Vector3.zero;
             golfBallRb.constraints = RigidbodyConstraints.FreezeAll;
             ballHasStopped = true;
             waitingForStopCheck = false;
             ballShotTime = 0;
+            sirPuttAnim.Jump();
         }
         else
         {
             waitingForStopCheck = false;
         }
+    }
+
+    public void SetBallInAnim(bool input)
+    {
+        ballInAnim = input;
     }
 
     private void OnCollisionEnter(Collision collision)
