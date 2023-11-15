@@ -45,7 +45,10 @@ public class GolfBallManager : MonoBehaviour
     //KeyCodes
     KeyCode chipShotKey = KeyCode.W;
     KeyCode jumpKey = KeyCode.Space;
-    
+
+    //Debug Vars
+    public bool debugMode = false;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -284,14 +287,17 @@ public class GolfBallManager : MonoBehaviour
         barPercentage = 0;
         powerBar.GetComponent<Image>().color = GetBarColor();
 
-        if (player.GainEXP(50))
+        if (debugMode)
         {
-            waitingForLevelUp = true;
-            LevelUpNotif();
-        }
-        else if (!waitingForLevelUp)
-        {
-            UpdateExpBar();
+            if (player.GainEXP(50))
+            {
+                waitingForLevelUp = true;
+                LevelUpNotif();
+            }
+            else if (!waitingForLevelUp)
+            {
+                UpdateExpBar();
+            }
         }
 
         ballInAnim = false;
