@@ -37,6 +37,8 @@ public class GolfBallManager : MonoBehaviour
     private float power = 50, bounciness = .8f, friction = 2.2f;
     private Vector3 curVel = new Vector3(0, 0, 0), lastFrameVel = new Vector3(0, 0, 0);
     private bool applyFriction = false;
+    private bool ballHasStopped = true, waitingForStopCheck = false;
+    private float ballShotTime = 0, frictionTimeMod = 1;
 
     //KeyCodes
     KeyCode chipShotKey = KeyCode.W;
@@ -87,22 +89,33 @@ public class GolfBallManager : MonoBehaviour
         lastFrameVel = curVel;
         curVel = golfBallRb.velocity;
 
+        if (!ballHasStopped)
+        {
+            ballShotTime += Time.deltaTime;
+            if (ballShotTime >= 10)
+            {
+                frictionTimeMod = Mathf.Pow(2, ballShotTime / 5 - 1);
+            }
+        }
+
         //Friction
         if (applyFriction)
         {
-            if (golfBallRb.velocity.magnitude > friction * (usedSpikeBall ? 2 : 1) * (usingFireball ? 0 : 1) * Time.deltaTime)
+            if (golfBallRb.velocity.magnitude > friction * (usedSpikeBall ? 2 : 1) * (usingFireball ? 0 : 1) * frictionTimeMod * Time.deltaTime)
             {
                 golfBallRb.velocity -= golfBallRb.velocity.normalized * friction * (usedSpikeBall ? 2 : 1)
                                        * (usingFireball ? 0 : 1) * Time.deltaTime;
             }
-            else if (golfBallRb.velocity.magnitude != 0)
+            else if (!ballHasStopped && !waitingForStopCheck)
             {
                 golfBallRb.velocity = Vector3.zero;
+                StartCoroutine(BallStopCheck());
+                waitingForStopCheck = true;
             }
         }
 
         //Can't fire a shot if the golf ball is moving or if player is leveling up
-        if (golfBallRb.velocity == new Vector3(0, 0, 0) && !inLevelUpScreen)
+        if (ballHasStopped && !inLevelUpScreen)
         {
             if (usedSpikeBall)
             {
@@ -144,6 +157,8 @@ public class GolfBallManager : MonoBehaviour
             if (Input.GetMouseButtonUp(0) && planningShot)
             {
                 planningShot = false;
+                ballHasStopped = false;
+                golfBallRb.constraints = RigidbodyConstraints.None;
                 if (curShotType == 1)
                 {
                     golfBallRb.AddForce(power * barPercentage * (power * (tri.transform.position -
@@ -266,19 +281,32 @@ public class GolfBallManager : MonoBehaviour
         golfBallRb.velocity = Vector3.zero;
     }
 
+    IEnumerator BallStopCheck()
+    {
+        yield return new WaitForSeconds(1);
+        if (golfBallRb.velocity.magnitude < friction * (usedSpikeBall ? 2 : 1) * frictionTimeMod * Time.deltaTime)
+        {
+            golfBallRb.velocity = Vector3.zero;
+            golfBallRb.constraints = RigidbodyConstraints.FreezeAll;
+            ballHasStopped = true;
+            waitingForStopCheck = false;
+            ballShotTime = 0;
+        }
+        else
+        {
+            waitingForStopCheck = false;
+        }
+    }
+
     private void OnCollisionEnter(Collision collision)
     {
-        Debug.Log("Enter " + collision.gameObject.name);
-        Debug.Log("Enter " + collision.gameObject.tag);
-        Debug.Log("Enter " + collision.gameObject.CompareTag("Bouncy"));
-        
         //Ball is touching an object; apply friction
         applyFriction = true;
 
         //If the ball collides with a bouncy surface, bounce off of it
         if (collision.gameObject.CompareTag("Bouncy"))
         {
-            Physics.Raycast(transform.position, collision.transform.position - transform.position, out RaycastHit hitInfo);
+            Physics.Raycast(transform.position, collision.GetContact(0).point - transform.position, out RaycastHit hitInfo);
             golfBallRb.velocity = lastFrameVel;
             golfBallRb.velocity -= 2 * Vector3.Dot(golfBallRb.velocity, hitInfo.normal) * hitInfo.normal;
             golfBallRb.velocity *= usingFireball ? 1 : bounciness;
@@ -329,10 +357,6 @@ public class GolfBallManager : MonoBehaviour
     {
         //Ball is no longer touching object, stop applying friction
         applyFriction = false;
-
-        Debug.Log("Exit " + collision.gameObject.name);
-        Debug.Log("Exit " + collision.gameObject.tag);
-        Debug.Log("Exit " + collision.gameObject.CompareTag("Bouncy"));
     }
 
     public void UpdateExpBar()
