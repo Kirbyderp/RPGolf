@@ -6,6 +6,13 @@ TagManager:
   tags:
   - Bouncy
   - Enemy
+  - Damage
+  - Golf Ball
+  - Fireball
+  - Air Ball
+  - Mega Bounce
+  - Tiny Ball
+  - Ice Physics
   layers:
   - Default
   - TransparentFX
