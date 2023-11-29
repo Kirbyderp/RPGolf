@@ -73,6 +73,8 @@ public class PlayerInfo
     private int jumpsPerLevel, shieldsPerLevel;
     private float damageBonus, jumpStrength;
 
+    private bool waitingForLevelUp;
+
     public PlayerInfo()
     {
         hasAbilities = new bool[12] { false, false, false, false, false, false, false, false, false, false, false, false };
@@ -83,6 +85,7 @@ public class PlayerInfo
         jumpsPerLevel = 2;
         jumpStrength = 7;
         shieldsPerLevel = 0;
+        waitingForLevelUp = false;
 
         players.Add(this);
     }
@@ -126,6 +129,16 @@ public class PlayerInfo
     public bool HasAbility(int index)
     {
         return hasAbilities[index];
+    }
+
+    public bool WaitingForLevelUp()
+    {
+        return waitingForLevelUp;
+    }
+
+    public void SetWaitingForLevelUp(bool isWaiting)
+    {
+        waitingForLevelUp = isWaiting;
     }
 
     //Returns true if the exp gained caused the player to level up, false otherwise
