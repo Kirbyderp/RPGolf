@@ -18,19 +18,29 @@ public class GolfBallManager : MonoBehaviour
 
     //Ability use vars
     private int nextAbilityKey = 1;
-    private KeyCode[] abilityKeys = new KeyCode[11];
+    private KeyCode[] abilityKeys = new KeyCode[12];
     private int timesJumped = 0;
     private bool usedSpikeBall = false;
     private bool usingFireball = false, usedFireball = false;
+    private bool usingGlide = false, usedGlide = false;
+    private bool usedDoOver = false;
+    private bool usedExplosion = false;
     private float fireballTimer = 0, fireballDuration = 2;
+    private int shieldsUsed = 0;
+    private GameObject leftCurveLoc, rightCurveLoc;
+
 
     //Hitting the ball vars
     private GameObject camRotator;
     private Vector3 mouseStarterPos, mousePos;
     private bool planningShot = false, mouseOverLevelUp = false;
-    private GameObject powerBar, triRotator, tri;
+    private GameObject powerBar, triRotator, tri, triRotatorCopy;
     private float barPercentage = 0;
-    private int curShotType = 0; //0 = putt, 1 = chip, 2 = curve
+    private int curShotType = 0; //0 = putt, 1 = chip, 2 = curve left, 3 = curve right
+    private SirPuttAnimController sirPuttAnim;
+    private bool ballInAnim = false;
+    private Vector3 lastHitPos, curHitPos;
+    private GameObject[] allEnemies;
 
     //Ball physics vars
     private Rigidbody golfBallRb;
@@ -39,11 +49,24 @@ public class GolfBallManager : MonoBehaviour
     private bool applyFriction = false;
     private bool ballHasStopped = true, waitingForStopCheck = false;
     private float ballShotTime = 0, frictionTimeMod = 1;
+    private Vector3 defaultGrav = new Vector3(0, -9.81f, 0);
+
+    //Curse vars
+    private bool hasMegaBounce = false;
+    private int airBallTurns = 0, tinyTurns = 0, icyTurns = 0;
+
+    //Other
+    bool lastShotOB = false;
+    int numStrokes = 0;
 
     //KeyCodes
     KeyCode chipShotKey = KeyCode.W;
+    KeyCode curveShotKey = KeyCode.S;
     KeyCode jumpKey = KeyCode.Space;
-    
+
+    //Debug Vars
+    public bool isDebugMode = false;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -73,23 +96,27 @@ public class GolfBallManager : MonoBehaviour
         powerBar.GetComponent<Image>().color = GetBarColor();
         triRotator = GameObject.Find("Tri Rotator");
         tri = GameObject.Find("Tri");
+        triRotatorCopy = GameObject.Find("Tri Rotator Copy");
         tri.SetActive(false);
         golfBallRb = GetComponent<Rigidbody>();
+
+        sirPuttAnim = GameObject.Find("Sir Puttsalot").GetComponent<SirPuttAnimController>();
+
+        leftCurveLoc = GameObject.Find("Left Curve Loc");
+        rightCurveLoc = GameObject.Find("Right Curve Loc");
+
+        curHitPos = transform.position;
+        Debug.Log(GameObject.Find("Main Camera").transform.position);
     }
 
     // Update is called once per frame
     void Update()
-    {
-        if (transform.position.y < -5)
-        {
-            ResetBallPosition();
-        }
-
+    {        
         //Keeps track of the golf ball's velocity for collisions
         lastFrameVel = curVel;
         curVel = golfBallRb.velocity;
 
-        if (!ballHasStopped)
+        if (!ballHasStopped && !ballInAnim)
         {
             ballShotTime += Time.deltaTime;
             if (ballShotTime >= 10)
@@ -99,9 +126,11 @@ public class GolfBallManager : MonoBehaviour
         }
 
         //Friction
-        if (applyFriction)
+        if (applyFriction && !ballInAnim)
         {
-            if (golfBallRb.velocity.magnitude > friction * (usedSpikeBall ? 2 : 1) * (usingFireball ? 0 : 1) * frictionTimeMod * Time.deltaTime)
+            if (golfBallRb.velocity.magnitude > friction * (usedSpikeBall ? 2 : 1) * (usingFireball ? 0 : 1) *
+                                                (icyTurns > 0 ? .5f : 1) * (airBallTurns > 0 ? .5f : 1) *
+                                                frictionTimeMod * Time.deltaTime)
             {
                 golfBallRb.velocity -= golfBallRb.velocity.normalized * friction * (usedSpikeBall ? 2 : 1)
                                        * (usingFireball ? 0 : 1) * Time.deltaTime;
@@ -114,17 +143,17 @@ public class GolfBallManager : MonoBehaviour
             }
         }
 
-        //Can't fire a shot if the golf ball is moving or if player is leveling up
-        if (ballHasStopped && !inLevelUpScreen)
+        //Can't fire a shot if the golf ball is moving, if player is leveling up, or if in animation
+        if ((ballHasStopped || player.HasAbility(11)) && !inLevelUpScreen && !ballInAnim)
         {
-            if (usedSpikeBall)
+            if (usedSpikeBall && ballHasStopped)
             {
                 Debug.Log("Deactivated Spike Ball");
                 usedSpikeBall = false;
             }
 
             //Allow changing shot type if player has ability(s)
-            if (player.HasAbility(0) && Input.GetKeyDown(chipShotKey))
+            if (player.HasAbility(0) && Input.GetKeyDown(chipShotKey) && ballHasStopped)
             {
                 if (curShotType == 1)
                 {
@@ -138,8 +167,27 @@ public class GolfBallManager : MonoBehaviour
                 }
             }
 
-            //Allow fireball activation if player has abhility
-            if (player.HasAbility(2) && Input.GetKeyDown(abilityKeys[2]) && !usedFireball)
+            if (player.HasAbility(7) && Input.GetKeyDown(curveShotKey) && ballHasStopped)
+            {
+                if (curShotType == 2)
+                {
+                    curShotType = 3;
+                    Debug.Log("Current Shot Type: Curve Right");
+                }
+                else if (curShotType == 3)
+                {
+                    curShotType = 0;
+                    Debug.Log("Current Shot Type: Putt");
+                }
+                else
+                {
+                    curShotType = 2;
+                    Debug.Log("Current Shot Type: Curve Left");
+                }
+            }
+
+            //Allow fireball activation if player has ability
+            if (player.HasAbility(2) && Input.GetKeyDown(abilityKeys[2]) && !usedFireball && ballHasStopped)
             {
                 if (usingFireball)
                 {
@@ -153,37 +201,50 @@ public class GolfBallManager : MonoBehaviour
                 }
             }
 
+            //Allow glide activation if player has ability
+            if (player.HasAbility(6) && Input.GetKeyDown(abilityKeys[6]) && !usedGlide && ballHasStopped)
+            {
+                if (usingGlide)
+                {
+                    Debug.Log("Cancelled Glide");
+                    usingGlide = false;
+                }
+                else
+                {
+                    Debug.Log("Using Glide");
+                    usingGlide = true;
+                }
+            }
+
+            //Allow do over if player has ability
+            if (player.HasAbility(9) && Input.GetKeyDown(abilityKeys[9]) && !usedDoOver && ballHasStopped)
+            {
+                numStrokes--;
+                if (lastShotOB)
+                {
+                    numStrokes--;
+                }
+                ResetBallPosition(lastHitPos);
+                triRotatorCopy.transform.position = triRotator.transform.position;
+                usedDoOver = true;
+            }
+
             //If the player releases lmb, fire shot
             if (Input.GetMouseButtonUp(0) && planningShot)
             {
                 planningShot = false;
-                ballHasStopped = false;
-                golfBallRb.constraints = RigidbodyConstraints.None;
-                if (curShotType == 1)
+                lastHitPos = curHitPos;
+                if (ballHasStopped)
                 {
-                    golfBallRb.AddForce(power * barPercentage * (power * (tri.transform.position -
-                                        triRotator.transform.position).normalized + new Vector3(0, 7, 0)).normalized,
-                                        ForceMode.Impulse);
+                    ballHasStopped = false;
+                    ballInAnim = true;
+                    sirPuttAnim.Swing();
+                    StartCoroutine(WaitForBallSwing());
                 }
                 else
                 {
-                    golfBallRb.AddForce(power * barPercentage * (tri.transform.position - triRotator.transform.position).normalized,
-                                        ForceMode.Impulse);
-                }
-
-                tri.SetActive(false);
-                powerBar.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 0);
-                barPercentage = 0;
-                powerBar.GetComponent<Image>().color = GetBarColor();
-
-                if (player.GainEXP(50))
-                {
-                    waitingForLevelUp = true;
-                    LevelUpNotif();
-                }
-                else if (!waitingForLevelUp)
-                {
-                    UpdateExpBar();
+                    golfBallRb.velocity = Vector3.zero;
+                    Swing();
                 }
             }
 
@@ -203,6 +264,10 @@ public class GolfBallManager : MonoBehaviour
                 if (triRotator.transform.rotation.eulerAngles.x != 0 || triRotator.transform.rotation.eulerAngles.z != 0)
                 {
                     triRotator.transform.rotation = Quaternion.Euler(0, triRotator.transform.rotation.eulerAngles.y, 0);
+                }
+                if (ballHasStopped)
+                {
+                    triRotatorCopy.transform.rotation = triRotator.transform.rotation;
                 }
                 if (mouseDif.magnitude < 250)
                 {
@@ -257,6 +322,66 @@ public class GolfBallManager : MonoBehaviour
                 Debug.Log("Activated Spike Ball");
                 usedSpikeBall = true;
             }
+
+            //Gliding
+            if (usingGlide)
+            {
+                if (golfBallRb.velocity.y < -1)
+                {
+                    Physics.gravity = Vector3.zero;
+                    golfBallRb.velocity = new Vector3(golfBallRb.velocity.x, -1, golfBallRb.velocity.z);
+                }
+                else if (golfBallRb.velocity.y > -.9f)
+                {
+                    Physics.gravity = defaultGrav / (airBallTurns > 0 ? 2 : 1);
+                }
+            }
+
+            //Ball Curving
+            if (curShotType == 2 && !ballHasStopped)
+            {
+                Debug.Log("Curving Left");
+                Debug.Log(golfBallRb.velocity);
+                golfBallRb.velocity = Vector3.RotateTowards(golfBallRb.velocity,
+                                                            leftCurveLoc.transform.position - transform.position,
+                                                            Mathf.PI / 4 * Time.deltaTime, 0);
+                Debug.Log(golfBallRb.velocity);
+            }
+            else if (curShotType == 3 && !ballHasStopped)
+            {
+                Debug.Log("Curving Right");
+                Debug.Log(golfBallRb.velocity);
+                golfBallRb.velocity = Vector3.RotateTowards(golfBallRb.velocity,
+                                                            rightCurveLoc.transform.position - transform.position,
+                                                            Mathf.PI / 4 * Time.deltaTime, 0);
+                Debug.Log(golfBallRb.velocity);
+            }
+
+            //Explosion
+            if (player.HasAbility(10) && Input.GetKeyDown(abilityKeys[10]) && !usedExplosion)
+            {
+                Debug.Log("Exploded");
+                allEnemies = GameObject.FindGameObjectsWithTag("Enemy");
+                foreach (GameObject enemy in allEnemies)
+                {
+                    if ((enemy.transform.position - transform.position).magnitude < 1.5f / (tinyTurns > 0 ? 2 : 1))
+                    {
+                        if (enemy.GetComponent<Enemy>().TakeDamage(125 * player.GetDamageBonus() * (tinyTurns > 0 ? .5f : 1)))
+                        {
+                            if (player.GainEXP(enemy.GetComponent<Enemy>().expReward))
+                            {
+                                waitingForLevelUp = true;
+                                LevelUpNotif();
+                            }
+                            else if (!waitingForLevelUp)
+                            {
+                                UpdateExpBar();
+                            }
+                            Destroy(enemy);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -275,27 +400,168 @@ public class GolfBallManager : MonoBehaviour
         mouseOverLevelUp = false;
     }
 
-    public void ResetBallPosition()
+    public void OutOfBounds()
     {
-        transform.position = Vector3.zero;
+        lastShotOB = true;
+        numStrokes++;
+        airBallTurns--;
+        if (airBallTurns <= 0)
+        {
+            Physics.gravity = defaultGrav;
+        }
+        tinyTurns--;
+        icyTurns--;
+        ResetBallPosition(lastHitPos);
+    }
+
+    public void ResetBallPosition(Vector3 posIn)
+    {
+        transform.position = posIn;
         golfBallRb.velocity = Vector3.zero;
+        golfBallRb.constraints = RigidbodyConstraints.FreezeAll;
+        ballHasStopped = true;
+        waitingForStopCheck = false;
+        ballShotTime = 0;
+        curHitPos = transform.position;
+        if (usingGlide)
+        {
+            usedGlide = true;
+            usingGlide = false;
+            Physics.gravity = defaultGrav / (airBallTurns > 0 ? 2 : 1);
+        }
+    }
+
+    IEnumerator WaitForBallSwing()
+    {
+        yield return new WaitForSeconds(55 / 60f);
+        Swing();
+        ballInAnim = false;
+    }
+    
+    private void Swing()
+    {
+        golfBallRb.constraints = RigidbodyConstraints.None;
+        if (curShotType == 1)
+        {
+            golfBallRb.AddForce(power * barPercentage * (power * (tri.transform.position -
+                                triRotator.transform.position).normalized + new Vector3(0, 7, 0)).normalized,
+                                ForceMode.Impulse);
+        }
+        else
+        {
+            golfBallRb.AddForce(power * barPercentage * (tri.transform.position - triRotator.transform.position).normalized,
+                                ForceMode.Impulse);
+        }
+
+        tri.SetActive(false);
+        powerBar.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 0);
+        barPercentage = 0;
+        powerBar.GetComponent<Image>().color = GetBarColor();
+
+        numStrokes++;
+        lastShotOB = false;
+
+        if (isDebugMode)
+        {
+            Debug.Log(isDebugMode);
+            if (player.GainEXP(50))
+            {
+                waitingForLevelUp = true;
+                LevelUpNotif();
+            }
+            else if (!waitingForLevelUp)
+            {
+                UpdateExpBar();
+            }
+        }
+    }
+
+    public void FreeFireball()
+    {
+        fireballTimer = 0;
+        if (!usingFireball)
+        {
+            usingFireball = true;
+        }
+    }
+
+    public void GainMegaBounce()
+    {
+        hasMegaBounce = true;
+    }
+
+    public void GainAirBall()
+    {
+        if (airBallTurns <= 0)
+        {
+            Physics.gravity /= 2;
+        }
+        airBallTurns = 2;
+    }
+
+    public void GainTinyBall()
+    {
+        if (tinyTurns <= 0)
+        {
+            transform.localScale = new Vector3(.25f, .25f, .25f);
+        }
+        tinyTurns = 2;
+    }
+
+    public void GainIcePhysics()
+    {
+        icyTurns = 2;
     }
 
     IEnumerator BallStopCheck()
     {
         yield return new WaitForSeconds(1);
-        if (golfBallRb.velocity.magnitude < friction * (usedSpikeBall ? 2 : 1) * frictionTimeMod * Time.deltaTime)
+        if (golfBallRb.velocity.magnitude < friction * (usedSpikeBall ? 2 : 1) *
+                                            (icyTurns > 0 ? .5f : 1) * (airBallTurns > 0 ? .5f : 1) * 
+                                            frictionTimeMod * Time.deltaTime)
         {
+            ballInAnim = true;
             golfBallRb.velocity = Vector3.zero;
             golfBallRb.constraints = RigidbodyConstraints.FreezeAll;
             ballHasStopped = true;
             waitingForStopCheck = false;
             ballShotTime = 0;
+            curHitPos = transform.position;
+            if (usingGlide)
+            {
+                usedGlide = true;
+                usingGlide = false;
+                Physics.gravity = defaultGrav / (airBallTurns > 0 ? 2 : 1);
+            }
+            airBallTurns--;
+            if (airBallTurns == 0)
+            {
+                Physics.gravity = defaultGrav;
+            }
+            tinyTurns--;
+            if (tinyTurns == 0)
+            {
+                transform.localScale = new Vector3(.5f, .5f, .5f);
+            }
+            icyTurns--;
+            if (curHitPos == lastHitPos)
+            {
+                ballInAnim = false;
+            }
+            else
+            {
+                sirPuttAnim.Jump();
+            }
         }
         else
         {
             waitingForStopCheck = false;
         }
+    }
+
+    public void SetBallInAnim(bool input)
+    {
+        ballInAnim = input;
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -310,6 +576,11 @@ public class GolfBallManager : MonoBehaviour
             golfBallRb.velocity = lastFrameVel;
             golfBallRb.velocity -= 2 * Vector3.Dot(golfBallRb.velocity, hitInfo.normal) * hitInfo.normal;
             golfBallRb.velocity *= usingFireball ? 1 : bounciness;
+            if (hasMegaBounce)
+            {
+                golfBallRb.velocity *= 4;
+                hasMegaBounce = false;
+            }
             curVel = golfBallRb.velocity;
         }
         
@@ -318,7 +589,7 @@ public class GolfBallManager : MonoBehaviour
         {
             //...and kills it, gain the exp reward, destroy the enemy, and continue onwards
             if (collision.gameObject.GetComponent<Enemy>().TakeDamage(lastFrameVel.magnitude * player.GetDamageBonus() *
-                (usedSpikeBall ? 4 : 1) * (usingFireball ? 4 : 1)))
+                (usedSpikeBall ? 4 : 1) * (usingFireball ? 4 : 1) * (tinyTurns > 0 ? .5f : 1)))
             {
                 if (player.GainEXP(collision.gameObject.GetComponent<Enemy>().expReward))
                 {
@@ -340,9 +611,38 @@ public class GolfBallManager : MonoBehaviour
                 golfBallRb.velocity = lastFrameVel;
                 golfBallRb.velocity -= 2 * Vector3.Dot(golfBallRb.velocity, hitInfo.normal) * hitInfo.normal;
                 golfBallRb.velocity *= collision.gameObject.GetComponent<Enemy>().bounciness;
+                if (hasMegaBounce)
+                {
+                    golfBallRb.velocity *= 4;
+                    hasMegaBounce = false;
+                }
                 curVel = golfBallRb.velocity;
             }
         }
+
+        //If the ball collides with a damaging object...
+        if (collision.gameObject.CompareTag("Damage"))
+        {
+            // ...if they have a shield to use, bounce off object
+            if (shieldsUsed < player.GetShieldsPerLevel())
+            {
+                shieldsUsed++;
+                Physics.Raycast(transform.position, collision.GetContact(0).point - transform.position, out RaycastHit hitInfo);
+                golfBallRb.velocity = lastFrameVel;
+                golfBallRb.velocity -= 2 * Vector3.Dot(golfBallRb.velocity, hitInfo.normal) * hitInfo.normal;
+                golfBallRb.velocity *= usingFireball ? 1 : bounciness;
+                if (hasMegaBounce)
+                {
+                    golfBallRb.velocity *= 4;
+                    hasMegaBounce = false;
+                }
+                curVel = golfBallRb.velocity;
+            }
+            else
+            { // ...reset its position to the last hit position if they have no shield.
+                ResetBallPosition(lastHitPos);
+            }
+        }    
     }
 
     private void OnCollisionStay(Collision collision)
@@ -407,6 +707,7 @@ public class GolfBallManager : MonoBehaviour
                     levelUpRewardUIs[1].gameObject.SetActive(false);
                     levelUpRewardUIs[2].gameObject.SetActive(true);
                     levelUpRewardUIs[2].SetLevelUpUI(5);
+                    levelUpRewardUIs[2].AddDesc("You will have " + (player.GetShieldsPerLevel() + 1) + " shield uses per hole.");
                     levelUpRewardUIs[3].gameObject.SetActive(true);
                     levelUpRewardUIs[3].SetLevelUpUI(6);
                     levelUpRewardUIs[3].AddDesc("Press " + nextAbilityKey + " to activate.");
@@ -419,6 +720,18 @@ public class GolfBallManager : MonoBehaviour
                     {
                         levelUpRewardUIs[4].SetLevelUpUI(8);
                     }
+                    break;
+                case 5:
+                    levelUpRewardUIs[0].gameObject.SetActive(false);
+                    levelUpRewardUIs[1].gameObject.SetActive(false);
+                    levelUpRewardUIs[2].gameObject.SetActive(true);
+                    levelUpRewardUIs[2].SetLevelUpUI(9);
+                    levelUpRewardUIs[2].AddDesc("Press " + nextAbilityKey + " to activate.");
+                    levelUpRewardUIs[3].gameObject.SetActive(true);
+                    levelUpRewardUIs[3].SetLevelUpUI(10);
+                    levelUpRewardUIs[3].AddDesc("Press " + nextAbilityKey + " to activate.");
+                    levelUpRewardUIs[4].gameObject.SetActive(true);
+                    levelUpRewardUIs[4].SetLevelUpUI(11);
                     break;
                 default:
                     levelUpRewardUIs[0].gameObject.SetActive(false);
