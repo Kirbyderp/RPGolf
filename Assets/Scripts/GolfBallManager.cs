@@ -65,7 +65,7 @@ public class GolfBallManager : MonoBehaviour
     KeyCode jumpKey = KeyCode.Space;
 
     //Debug Vars
-    public bool debugMode = false;
+    public bool isDebugMode = false;
 
     // Start is called before the first frame update
     void Start()
@@ -106,6 +106,7 @@ public class GolfBallManager : MonoBehaviour
         rightCurveLoc = GameObject.Find("Right Curve Loc");
 
         curHitPos = transform.position;
+        Debug.Log(GameObject.Find("Main Camera").transform.position);
     }
 
     // Update is called once per frame
@@ -460,8 +461,9 @@ public class GolfBallManager : MonoBehaviour
         numStrokes++;
         lastShotOB = false;
 
-        if (debugMode)
+        if (isDebugMode)
         {
+            Debug.Log(isDebugMode);
             if (player.GainEXP(50))
             {
                 waitingForLevelUp = true;

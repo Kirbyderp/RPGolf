@@ -28,8 +28,6 @@ public class Enemy : MonoBehaviour
     {
         curHP = (int)(curHP - velIn);
         
-        
-        
         if (curHP <= 0)
         {
             return true;
