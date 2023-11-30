@@ -750,11 +750,7 @@ public class GolfBallManager : MonoBehaviour
                     levelUpRewardUIs[4].SetLevelUpUI(11);
                     break;
                 default:
-                    levelUpRewardUIs[0].gameObject.SetActive(false);
-                    levelUpRewardUIs[1].gameObject.SetActive(false);
-                    levelUpRewardUIs[2].gameObject.SetActive(true);
-                    levelUpRewardUIs[3].gameObject.SetActive(true);
-                    levelUpRewardUIs[4].gameObject.SetActive(true);
+                    SelectRandomRewards();
                     break;
             }
             InvokeRepeating("LevelUpUIEnterAnim", 0, 1 / 60f);
@@ -762,6 +758,33 @@ public class GolfBallManager : MonoBehaviour
             {
                 player.SetWaitingForLevelUp(false);
                 UpdateExpBar();
+            }
+        }
+    }
+
+    private void SelectRandomRewards()
+    {
+        levelUpRewardUIs[0].gameObject.SetActive(false);
+        levelUpRewardUIs[1].gameObject.SetActive(false);
+        int[] nextAbilities = new int[3];
+        for (int count = 0; count < 3; count++)
+        {
+            int abilityNum;
+            do
+            {
+                abilityNum = (int)Random.Range(0, 11.999f);
+            }
+            while (player.HasAbility(abilityNum) || (count > 0 ? nextAbilities[0] == abilityNum : false) || (count > 1 ? nextAbilities[1] == abilityNum : false));
+            nextAbilities[count] = abilityNum;
+            levelUpRewardUIs[count + 2].gameObject.SetActive(true);
+            levelUpRewardUIs[count + 2].SetLevelUpUI(abilityNum);
+            if (abilityNum == 2 || abilityNum == 3 || abilityNum == 6 || abilityNum == 9 || abilityNum == 10)
+            {
+                levelUpRewardUIs[count + 2].AddDesc("Press " + nextAbilityKey + " to activate.");
+            }
+            if (abilityNum == 5)
+            {
+                levelUpRewardUIs[count + 2].AddDesc("You will have " + (player.GetShieldsPerLevel() + 1) + " shield uses per hole.");
             }
         }
     }
