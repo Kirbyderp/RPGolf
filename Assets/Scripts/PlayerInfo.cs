@@ -63,7 +63,7 @@ public class PlayerInfo
                                                                  "before shot abilities.",};
     public static readonly Sprite[] REWARD_IMAGES = new Sprite[] { /* Use Resources.Load([FilePath])*/ };
 
-    public static readonly int[] LEVEL_EXP_THRESHOLDS = new int[] { 0, 100, 150, 200, 250, 100000 };
+    public static readonly int[] LEVEL_EXP_THRESHOLDS = new int[] { 0, 50, 100, 150, 200, 250, 100000 };
 
     private static List<PlayerInfo> players = new List<PlayerInfo>();
 
@@ -72,6 +72,8 @@ public class PlayerInfo
 
     private int jumpsPerLevel, shieldsPerLevel;
     private float damageBonus, jumpStrength;
+
+    private bool waitingForLevelUp;
 
     public PlayerInfo()
     {
@@ -83,6 +85,7 @@ public class PlayerInfo
         jumpsPerLevel = 2;
         jumpStrength = 7;
         shieldsPerLevel = 0;
+        waitingForLevelUp = false;
 
         players.Add(this);
     }
@@ -126,6 +129,16 @@ public class PlayerInfo
     public bool HasAbility(int index)
     {
         return hasAbilities[index];
+    }
+
+    public bool WaitingForLevelUp()
+    {
+        return waitingForLevelUp;
+    }
+
+    public void SetWaitingForLevelUp(bool isWaiting)
+    {
+        waitingForLevelUp = isWaiting;
     }
 
     //Returns true if the exp gained caused the player to level up, false otherwise

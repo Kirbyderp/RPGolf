@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class GolfBallManager : MonoBehaviour
 {
@@ -9,8 +10,7 @@ public class GolfBallManager : MonoBehaviour
     private PlayerInfo player;
     private GameObject expBar;
     private TMPro.TextMeshProUGUI expText;
-    private int playerLevel = 1;
-    private bool waitingForLevelUp = false;
+    private int playerLevel;
     private GameObject levelUpUIBackground;
     private LevelUpRewardUI[] levelUpRewardUIs;
     private bool inLevelUpScreen = false, waitingForLevelUpAnim = false;
@@ -56,8 +56,12 @@ public class GolfBallManager : MonoBehaviour
     private int airBallTurns = 0, tinyTurns = 0, icyTurns = 0;
 
     //Other
-    bool lastShotOB = false;
-    int numStrokes = 0;
+    private bool lastShotOB = false;
+    private int numStrokes = 0;
+    private int holeEndAnimCount = 0;
+    private bool inEndScreen = false, waitingOnEndAnim = false;
+    private GameObject holeEndUIBackground;
+    private string sceneToGoTo;
 
     //KeyCodes
     KeyCode chipShotKey = KeyCode.W;
@@ -65,7 +69,7 @@ public class GolfBallManager : MonoBehaviour
     KeyCode jumpKey = KeyCode.Space;
 
     //Debug Vars
-    public bool isDebugMode = false;
+    public bool isDebugMode;
 
     // Start is called before the first frame update
     void Start()
@@ -73,17 +77,26 @@ public class GolfBallManager : MonoBehaviour
         if (PlayerInfo.GetPlayers().Count == 0)
         {
             player = new PlayerInfo();
+            playerLevel = 1;
         }
         else
         {
             player = PlayerInfo.GetPlayers()[0];
+            playerLevel = player.GetLevel();
         }
         camRotator = GameObject.Find("Camera Rotator");
         powerBar = GameObject.Find("Power Bar");
         expBar = GameObject.Find("Exp Bar");
         expBar.GetComponent<Image>().color = Color.green;
         expText = GameObject.Find("Exp Text").GetComponent<TMPro.TextMeshProUGUI>();
-        UpdateExpBar();
+        if (player.WaitingForLevelUp())
+        {
+            LevelUpNotif();
+        }
+        else
+        {
+            UpdateExpBar();
+        }
         levelUpUIBackground = GameObject.Find("Level Up Background");
         levelUpRewardUIs = new LevelUpRewardUI[5];
         levelUpRewardUIs[0] = GameObject.Find("Level Up 21").GetComponent<LevelUpRewardUI>();
@@ -106,278 +119,282 @@ public class GolfBallManager : MonoBehaviour
         rightCurveLoc = GameObject.Find("Right Curve Loc");
 
         curHitPos = transform.position;
-        Debug.Log(GameObject.Find("Main Camera").transform.position);
+
+        holeEndUIBackground = GameObject.Find("Hole End Background");
     }
 
     // Update is called once per frame
     void Update()
-    {        
-        //Keeps track of the golf ball's velocity for collisions
-        lastFrameVel = curVel;
-        curVel = golfBallRb.velocity;
-
-        if (!ballHasStopped && !ballInAnim)
+    {
+        if (!inEndScreen)
         {
-            ballShotTime += Time.deltaTime;
-            if (ballShotTime >= 10)
-            {
-                frictionTimeMod = Mathf.Pow(2, ballShotTime / 5 - 1);
-            }
-        }
+            //Keeps track of the golf ball's velocity for collisions
+            lastFrameVel = curVel;
+            curVel = golfBallRb.velocity;
 
-        //Friction
-        if (applyFriction && !ballInAnim)
-        {
-            if (golfBallRb.velocity.magnitude > friction * (usedSpikeBall ? 2 : 1) * (usingFireball ? 0 : 1) *
-                                                (icyTurns > 0 ? .5f : 1) * (airBallTurns > 0 ? .5f : 1) *
-                                                frictionTimeMod * Time.deltaTime)
+            if (!ballHasStopped && !ballInAnim)
             {
-                golfBallRb.velocity -= golfBallRb.velocity.normalized * friction * (usedSpikeBall ? 2 : 1)
-                                       * (usingFireball ? 0 : 1) * Time.deltaTime;
-            }
-            else if (!ballHasStopped && !waitingForStopCheck)
-            {
-                golfBallRb.velocity = Vector3.zero;
-                StartCoroutine(BallStopCheck());
-                waitingForStopCheck = true;
-            }
-        }
-
-        //Can't fire a shot if the golf ball is moving, if player is leveling up, or if in animation
-        if ((ballHasStopped || player.HasAbility(11)) && !inLevelUpScreen && !ballInAnim)
-        {
-            if (usedSpikeBall && ballHasStopped)
-            {
-                Debug.Log("Deactivated Spike Ball");
-                usedSpikeBall = false;
-            }
-
-            //Allow changing shot type if player has ability(s)
-            if (player.HasAbility(0) && Input.GetKeyDown(chipShotKey) && ballHasStopped)
-            {
-                if (curShotType == 1)
+                ballShotTime += Time.deltaTime;
+                if (ballShotTime >= 10)
                 {
-                    curShotType = 0;
-                    Debug.Log("Current Shot Type: Putt");
-                }
-                else
-                {
-                    curShotType = 1;
-                    Debug.Log("Current Shot Type: Chip");
+                    frictionTimeMod = Mathf.Pow(2, ballShotTime / 5 - 1);
                 }
             }
 
-            if (player.HasAbility(7) && Input.GetKeyDown(curveShotKey) && ballHasStopped)
+            //Friction
+            if (applyFriction && !ballInAnim)
             {
-                if (curShotType == 2)
+                if (golfBallRb.velocity.magnitude > friction * (usedSpikeBall ? 2 : 1) * (usingFireball ? 0 : 1) *
+                                                    (icyTurns > 0 ? .5f : 1) * (airBallTurns > 0 ? .5f : 1) *
+                                                    frictionTimeMod * Time.deltaTime)
                 {
-                    curShotType = 3;
-                    Debug.Log("Current Shot Type: Curve Right");
+                    golfBallRb.velocity -= golfBallRb.velocity.normalized * friction * (usedSpikeBall ? 2 : 1)
+                                           * (usingFireball ? 0 : 1) * Time.deltaTime;
                 }
-                else if (curShotType == 3)
-                {
-                    curShotType = 0;
-                    Debug.Log("Current Shot Type: Putt");
-                }
-                else
-                {
-                    curShotType = 2;
-                    Debug.Log("Current Shot Type: Curve Left");
-                }
-            }
-
-            //Allow fireball activation if player has ability
-            if (player.HasAbility(2) && Input.GetKeyDown(abilityKeys[2]) && !usedFireball && ballHasStopped)
-            {
-                if (usingFireball)
-                {
-                    Debug.Log("Cancelled Fireball");
-                    usingFireball = false;
-                }
-                else
-                {
-                    Debug.Log("Using Fireball");
-                    usingFireball = true;
-                }
-            }
-
-            //Allow glide activation if player has ability
-            if (player.HasAbility(6) && Input.GetKeyDown(abilityKeys[6]) && !usedGlide && ballHasStopped)
-            {
-                if (usingGlide)
-                {
-                    Debug.Log("Cancelled Glide");
-                    usingGlide = false;
-                }
-                else
-                {
-                    Debug.Log("Using Glide");
-                    usingGlide = true;
-                }
-            }
-
-            //Allow do over if player has ability
-            if (player.HasAbility(9) && Input.GetKeyDown(abilityKeys[9]) && !usedDoOver && ballHasStopped)
-            {
-                numStrokes--;
-                if (lastShotOB)
-                {
-                    numStrokes--;
-                }
-                ResetBallPosition(lastHitPos);
-                triRotatorCopy.transform.position = triRotator.transform.position;
-                usedDoOver = true;
-            }
-
-            //If the player releases lmb, fire shot
-            if (Input.GetMouseButtonUp(0) && planningShot)
-            {
-                planningShot = false;
-                lastHitPos = curHitPos;
-                if (ballHasStopped)
-                {
-                    ballHasStopped = false;
-                    ballInAnim = true;
-                    sirPuttAnim.Swing();
-                    StartCoroutine(WaitForBallSwing());
-                }
-                else
+                else if (!ballHasStopped && !waitingForStopCheck)
                 {
                     golfBallRb.velocity = Vector3.zero;
-                    Swing();
+                    StartCoroutine(BallStopCheck());
+                    waitingForStopCheck = true;
                 }
             }
 
-            if (planningShot)
+            //Can't fire a shot if the golf ball is moving, if player is leveling up, or if in animation
+            if ((ballHasStopped || player.HasAbility(11)) && !inLevelUpScreen && !ballInAnim)
             {
-                mousePos = Input.mousePosition;
-                transform.rotation = camRotator.transform.rotation;
-                Vector3 mouseDif = new Vector3(mousePos.x - mouseStarterPos.x, 0, mousePos.y - mouseStarterPos.y);
-                if (mouseDif.magnitude == 0)
+                if (usedSpikeBall && ballHasStopped)
                 {
-                    return;
+                    Debug.Log("Deactivated Spike Ball");
+                    usedSpikeBall = false;
                 }
-                tri.SetActive(true);
-                Vector3 triDif = tri.transform.position - triRotator.transform.position;
-                triRotator.transform.rotation *= Quaternion.FromToRotation(triDif, -mouseDif);
-                triRotator.transform.rotation *= transform.rotation;
-                if (triRotator.transform.rotation.eulerAngles.x != 0 || triRotator.transform.rotation.eulerAngles.z != 0)
-                {
-                    triRotator.transform.rotation = Quaternion.Euler(0, triRotator.transform.rotation.eulerAngles.y, 0);
-                }
-                if (ballHasStopped)
-                {
-                    triRotatorCopy.transform.rotation = triRotator.transform.rotation;
-                }
-                if (mouseDif.magnitude < 250)
-                {
-                    powerBar.GetComponent<RectTransform>().sizeDelta = new Vector2(150, mouseDif.magnitude * 700 / 250);
-                    barPercentage = mouseDif.magnitude / 250;
-                }
-                else
-                {
-                    powerBar.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 700);
-                    barPercentage = 1;
-                }
-                powerBar.GetComponent<Image>().color = GetBarColor();
-            }
 
-            //If the player clicks down lmb, begin planning shot
-            if (Input.GetMouseButtonDown(0) && !mouseOverLevelUp)
-            {
-                planningShot = true;
-                mouseStarterPos = Input.mousePosition;
-                transform.rotation = camRotator.transform.rotation; 
-            }
-        }
-        else if (golfBallRb.velocity.magnitude > 0) //During Shot Ability Activations
-        {
-            //Jump
-            if (player.HasAbility(1) && Input.GetKeyDown(jumpKey) && timesJumped < player.GetJumpsPerLevel())
-            {
-                Debug.Log("Jumped");
-                golfBallRb.AddForce(player.GetJumpStrength() * Vector3.up, ForceMode.Impulse);
-                timesJumped++;
-                if (timesJumped >= player.GetJumpsPerLevel())
+                //Allow changing shot type if player has ability(s)
+                if (player.HasAbility(0) && Input.GetKeyDown(chipShotKey) && ballHasStopped)
                 {
-                    Debug.Log("Now out of jumps");
-                }
-            }
-
-            //Fireball
-            if (usingFireball)
-            {
-                fireballTimer += Time.deltaTime;
-                if (fireballTimer >= fireballDuration)
-                {
-                    Debug.Log("Fireball Duration Over");
-                    usingFireball = false;
-                    usedFireball = true;
-                }
-            }
-
-            //Spike Ball
-            if (player.HasAbility(3) && Input.GetKeyDown(abilityKeys[3]) && !usedSpikeBall)
-            {
-                Debug.Log("Activated Spike Ball");
-                usedSpikeBall = true;
-            }
-
-            //Gliding
-            if (usingGlide)
-            {
-                if (golfBallRb.velocity.y < -1)
-                {
-                    Physics.gravity = Vector3.zero;
-                    golfBallRb.velocity = new Vector3(golfBallRb.velocity.x, -1, golfBallRb.velocity.z);
-                }
-                else if (golfBallRb.velocity.y > -.9f)
-                {
-                    Physics.gravity = defaultGrav / (airBallTurns > 0 ? 2 : 1);
-                }
-            }
-
-            //Ball Curving
-            if (curShotType == 2 && !ballHasStopped)
-            {
-                Debug.Log("Curving Left");
-                Debug.Log(golfBallRb.velocity);
-                golfBallRb.velocity = Vector3.RotateTowards(golfBallRb.velocity,
-                                                            leftCurveLoc.transform.position - transform.position,
-                                                            Mathf.PI / 4 * Time.deltaTime, 0);
-                Debug.Log(golfBallRb.velocity);
-            }
-            else if (curShotType == 3 && !ballHasStopped)
-            {
-                Debug.Log("Curving Right");
-                Debug.Log(golfBallRb.velocity);
-                golfBallRb.velocity = Vector3.RotateTowards(golfBallRb.velocity,
-                                                            rightCurveLoc.transform.position - transform.position,
-                                                            Mathf.PI / 4 * Time.deltaTime, 0);
-                Debug.Log(golfBallRb.velocity);
-            }
-
-            //Explosion
-            if (player.HasAbility(10) && Input.GetKeyDown(abilityKeys[10]) && !usedExplosion)
-            {
-                Debug.Log("Exploded");
-                allEnemies = GameObject.FindGameObjectsWithTag("Enemy");
-                foreach (GameObject enemy in allEnemies)
-                {
-                    if ((enemy.transform.position - transform.position).magnitude < 1.5f / (tinyTurns > 0 ? 2 : 1))
+                    if (curShotType == 1)
                     {
-                        if (enemy.GetComponent<Enemy>().TakeDamage(125 * player.GetDamageBonus() * (tinyTurns > 0 ? .5f : 1)))
+                        curShotType = 0;
+                        Debug.Log("Current Shot Type: Putt");
+                    }
+                    else
+                    {
+                        curShotType = 1;
+                        Debug.Log("Current Shot Type: Chip");
+                    }
+                }
+
+                if (player.HasAbility(7) && Input.GetKeyDown(curveShotKey) && ballHasStopped)
+                {
+                    if (curShotType == 2)
+                    {
+                        curShotType = 3;
+                        Debug.Log("Current Shot Type: Curve Right");
+                    }
+                    else if (curShotType == 3)
+                    {
+                        curShotType = 0;
+                        Debug.Log("Current Shot Type: Putt");
+                    }
+                    else
+                    {
+                        curShotType = 2;
+                        Debug.Log("Current Shot Type: Curve Left");
+                    }
+                }
+
+                //Allow fireball activation if player has ability
+                if (player.HasAbility(2) && Input.GetKeyDown(abilityKeys[2]) && !usedFireball && ballHasStopped)
+                {
+                    if (usingFireball)
+                    {
+                        Debug.Log("Cancelled Fireball");
+                        usingFireball = false;
+                    }
+                    else
+                    {
+                        Debug.Log("Using Fireball");
+                        usingFireball = true;
+                    }
+                }
+
+                //Allow glide activation if player has ability
+                if (player.HasAbility(6) && Input.GetKeyDown(abilityKeys[6]) && !usedGlide && ballHasStopped)
+                {
+                    if (usingGlide)
+                    {
+                        Debug.Log("Cancelled Glide");
+                        usingGlide = false;
+                    }
+                    else
+                    {
+                        Debug.Log("Using Glide");
+                        usingGlide = true;
+                    }
+                }
+
+                //Allow do over if player has ability
+                if (player.HasAbility(9) && Input.GetKeyDown(abilityKeys[9]) && !usedDoOver && ballHasStopped)
+                {
+                    numStrokes--;
+                    if (lastShotOB)
+                    {
+                        numStrokes--;
+                    }
+                    ResetBallPosition(lastHitPos);
+                    triRotatorCopy.transform.position = triRotator.transform.position;
+                    usedDoOver = true;
+                }
+
+                //If the player releases lmb, fire shot
+                if (Input.GetMouseButtonUp(0) && planningShot)
+                {
+                    planningShot = false;
+                    lastHitPos = curHitPos;
+                    if (ballHasStopped)
+                    {
+                        ballHasStopped = false;
+                        ballInAnim = true;
+                        sirPuttAnim.Swing();
+                        StartCoroutine(WaitForBallSwing());
+                    }
+                    else
+                    {
+                        golfBallRb.velocity = Vector3.zero;
+                        Swing();
+                    }
+                }
+
+                if (planningShot)
+                {
+                    mousePos = Input.mousePosition;
+                    transform.rotation = camRotator.transform.rotation;
+                    Vector3 mouseDif = new Vector3(mousePos.x - mouseStarterPos.x, 0, mousePos.y - mouseStarterPos.y);
+                    if (mouseDif.magnitude == 0)
+                    {
+                        return;
+                    }
+                    tri.SetActive(true);
+                    Vector3 triDif = tri.transform.position - triRotator.transform.position;
+                    triRotator.transform.rotation *= Quaternion.FromToRotation(triDif, -mouseDif);
+                    triRotator.transform.rotation *= transform.rotation;
+                    if (triRotator.transform.rotation.eulerAngles.x != 0 || triRotator.transform.rotation.eulerAngles.z != 0)
+                    {
+                        triRotator.transform.rotation = Quaternion.Euler(0, triRotator.transform.rotation.eulerAngles.y, 0);
+                    }
+                    if (ballHasStopped)
+                    {
+                        triRotatorCopy.transform.rotation = triRotator.transform.rotation;
+                    }
+                    if (mouseDif.magnitude < 250)
+                    {
+                        powerBar.GetComponent<RectTransform>().sizeDelta = new Vector2(150, mouseDif.magnitude * 700 / 250);
+                        barPercentage = mouseDif.magnitude / 250;
+                    }
+                    else
+                    {
+                        powerBar.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 700);
+                        barPercentage = 1;
+                    }
+                    powerBar.GetComponent<Image>().color = GetBarColor();
+                }
+
+                //If the player clicks down lmb, begin planning shot
+                if (Input.GetMouseButtonDown(0) && !mouseOverLevelUp)
+                {
+                    planningShot = true;
+                    mouseStarterPos = Input.mousePosition;
+                    transform.rotation = camRotator.transform.rotation;
+                }
+            }
+            else if (golfBallRb.velocity.magnitude > 0) //During Shot Ability Activations
+            {
+                //Jump
+                if (player.HasAbility(1) && Input.GetKeyDown(jumpKey) && timesJumped < player.GetJumpsPerLevel())
+                {
+                    Debug.Log("Jumped");
+                    golfBallRb.AddForce(player.GetJumpStrength() * Vector3.up, ForceMode.Impulse);
+                    timesJumped++;
+                    if (timesJumped >= player.GetJumpsPerLevel())
+                    {
+                        Debug.Log("Now out of jumps");
+                    }
+                }
+
+                //Fireball
+                if (usingFireball)
+                {
+                    fireballTimer += Time.deltaTime;
+                    if (fireballTimer >= fireballDuration)
+                    {
+                        Debug.Log("Fireball Duration Over");
+                        usingFireball = false;
+                        usedFireball = true;
+                    }
+                }
+
+                //Spike Ball
+                if (player.HasAbility(3) && Input.GetKeyDown(abilityKeys[3]) && !usedSpikeBall)
+                {
+                    Debug.Log("Activated Spike Ball");
+                    usedSpikeBall = true;
+                }
+
+                //Gliding
+                if (usingGlide)
+                {
+                    if (golfBallRb.velocity.y < -1)
+                    {
+                        Physics.gravity = Vector3.zero;
+                        golfBallRb.velocity = new Vector3(golfBallRb.velocity.x, -1, golfBallRb.velocity.z);
+                    }
+                    else if (golfBallRb.velocity.y > -.9f)
+                    {
+                        Physics.gravity = defaultGrav / (airBallTurns > 0 ? 2 : 1);
+                    }
+                }
+
+                //Ball Curving
+                if (curShotType == 2 && !ballHasStopped)
+                {
+                    Debug.Log("Curving Left");
+                    Debug.Log(golfBallRb.velocity);
+                    golfBallRb.velocity = Vector3.RotateTowards(golfBallRb.velocity,
+                                                                leftCurveLoc.transform.position - transform.position,
+                                                                Mathf.PI / 4 * Time.deltaTime, 0);
+                    Debug.Log(golfBallRb.velocity);
+                }
+                else if (curShotType == 3 && !ballHasStopped)
+                {
+                    Debug.Log("Curving Right");
+                    Debug.Log(golfBallRb.velocity);
+                    golfBallRb.velocity = Vector3.RotateTowards(golfBallRb.velocity,
+                                                                rightCurveLoc.transform.position - transform.position,
+                                                                Mathf.PI / 4 * Time.deltaTime, 0);
+                    Debug.Log(golfBallRb.velocity);
+                }
+
+                //Explosion
+                if (player.HasAbility(10) && Input.GetKeyDown(abilityKeys[10]) && !usedExplosion)
+                {
+                    Debug.Log("Exploded");
+                    allEnemies = GameObject.FindGameObjectsWithTag("Enemy");
+                    foreach (GameObject enemy in allEnemies)
+                    {
+                        if ((enemy.transform.position - transform.position).magnitude < 1.5f / (tinyTurns > 0 ? 2 : 1))
                         {
-                            if (player.GainEXP(enemy.GetComponent<Enemy>().expReward))
+                            if (enemy.GetComponent<Enemy>().TakeDamage(125 * player.GetDamageBonus() * (tinyTurns > 0 ? .5f : 1)))
                             {
-                                waitingForLevelUp = true;
-                                LevelUpNotif();
+                                if (player.GainEXP(enemy.GetComponent<Enemy>().expReward))
+                                {
+                                    player.SetWaitingForLevelUp(true);
+                                    LevelUpNotif();
+                                }
+                                else if (!player.WaitingForLevelUp())
+                                {
+                                    UpdateExpBar();
+                                }
+                                Destroy(enemy);
                             }
-                            else if (!waitingForLevelUp)
-                            {
-                                UpdateExpBar();
-                            }
-                            Destroy(enemy);
                         }
                     }
                 }
@@ -463,13 +480,12 @@ public class GolfBallManager : MonoBehaviour
 
         if (isDebugMode)
         {
-            Debug.Log(isDebugMode);
             if (player.GainEXP(50))
             {
-                waitingForLevelUp = true;
+                player.SetWaitingForLevelUp(true);
                 LevelUpNotif();
             }
-            else if (!waitingForLevelUp)
+            else if (!player.WaitingForLevelUp())
             {
                 UpdateExpBar();
             }
@@ -593,10 +609,10 @@ public class GolfBallManager : MonoBehaviour
             {
                 if (player.GainEXP(collision.gameObject.GetComponent<Enemy>().expReward))
                 {
-                    waitingForLevelUp = true;
+                    player.SetWaitingForLevelUp(true);
                     LevelUpNotif();
                 }
-                else if (!waitingForLevelUp)
+                else if (!player.WaitingForLevelUp())
                 {
                     UpdateExpBar();
                 }
@@ -674,7 +690,7 @@ public class GolfBallManager : MonoBehaviour
 
     public void LevelUpBonus()
     {
-        if (waitingForLevelUp && !inLevelUpScreen && golfBallRb.velocity == new Vector3(0, 0, 0))
+        if (player.WaitingForLevelUp() && !inLevelUpScreen && golfBallRb.velocity == new Vector3(0, 0, 0))
         {
             inLevelUpScreen = true;
             waitingForLevelUpAnim = true;
@@ -734,18 +750,41 @@ public class GolfBallManager : MonoBehaviour
                     levelUpRewardUIs[4].SetLevelUpUI(11);
                     break;
                 default:
-                    levelUpRewardUIs[0].gameObject.SetActive(false);
-                    levelUpRewardUIs[1].gameObject.SetActive(false);
-                    levelUpRewardUIs[2].gameObject.SetActive(true);
-                    levelUpRewardUIs[3].gameObject.SetActive(true);
-                    levelUpRewardUIs[4].gameObject.SetActive(true);
+                    SelectRandomRewards();
                     break;
             }
             InvokeRepeating("LevelUpUIEnterAnim", 0, 1 / 60f);
             if (playerLevel == player.GetLevel())
             {
-                waitingForLevelUp = false;
+                player.SetWaitingForLevelUp(false);
                 UpdateExpBar();
+            }
+        }
+    }
+
+    private void SelectRandomRewards()
+    {
+        levelUpRewardUIs[0].gameObject.SetActive(false);
+        levelUpRewardUIs[1].gameObject.SetActive(false);
+        int[] nextAbilities = new int[3];
+        for (int count = 0; count < 3; count++)
+        {
+            int abilityNum;
+            do
+            {
+                abilityNum = (int)Random.Range(0, 11.999f);
+            }
+            while (player.HasAbility(abilityNum) || (count > 0 ? nextAbilities[0] == abilityNum : false) || (count > 1 ? nextAbilities[1] == abilityNum : false));
+            nextAbilities[count] = abilityNum;
+            levelUpRewardUIs[count + 2].gameObject.SetActive(true);
+            levelUpRewardUIs[count + 2].SetLevelUpUI(abilityNum);
+            if (abilityNum == 2 || abilityNum == 3 || abilityNum == 6 || abilityNum == 9 || abilityNum == 10)
+            {
+                levelUpRewardUIs[count + 2].AddDesc("Press " + nextAbilityKey + " to activate.");
+            }
+            if (abilityNum == 5)
+            {
+                levelUpRewardUIs[count + 2].AddDesc("You will have " + (player.GetShieldsPerLevel() + 1) + " shield uses per hole.");
             }
         }
     }
@@ -818,6 +857,61 @@ public class GolfBallManager : MonoBehaviour
             levelUpUIBackground.GetComponent<RectTransform>().localPosition = new Vector3(0, 1920, 0);
             waitingForLevelUpAnim = false;
             inLevelUpScreen = false;
+        }
+    }
+
+    public void FinishHole(string sceneIn)
+    {
+        sceneToGoTo = sceneIn;
+        golfBallRb.constraints = RigidbodyConstraints.FreezeAll;
+        if (!inLevelUpScreen)
+        {
+            inEndScreen = true;
+            waitingOnEndAnim = true;
+            InvokeRepeating("HoleEndUIEnterAnim", 0, 1 / 60f);
+        }
+        else
+        {
+            StartCoroutine(BufferHoleEndUI());
+        }
+    }
+
+    IEnumerator BufferHoleEndUI()
+    {
+        bool waiting = true;
+        while (waiting)
+        {
+            yield return new WaitForSeconds(1 / 60f);
+            if (!inLevelUpScreen)
+            {
+                waiting = false;
+                inEndScreen = true;
+                waitingOnEndAnim = true;
+                InvokeRepeating("HoleEndUIEnterAnim", 0, 1 / 60f);
+            }
+        }
+    }
+
+    private void HoleEndUIEnterAnim()
+    {
+        holeEndAnimCount++;
+        holeEndUIBackground.GetComponent<RectTransform>().localPosition = new Vector3(0, 1920 * (1 - Mathf.Sin(Mathf.PI
+                                                                                      * holeEndAnimCount / 120)), 0);
+
+        if (holeEndAnimCount == 60)
+        {
+            CancelInvoke();
+            waitingOnEndAnim = false;
+            holeEndUIBackground.GetComponent<RectTransform>().localPosition = new Vector3(0, 0, 0);
+            holeEndAnimCount = 0;
+        }
+    }
+
+    public void LoadNextScene()
+    {
+        if (inEndScreen && !waitingOnEndAnim)
+        {
+            SceneManager.LoadScene(sceneToGoTo, LoadSceneMode.Single);
         }
     }
 }
