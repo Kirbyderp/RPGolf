@@ -45,11 +45,13 @@ public class GolfBallManager : MonoBehaviour
     //Ball physics vars
     private Rigidbody golfBallRb;
     private float power = 50, bounciness = .8f, friction = 2.2f;
+    private Vector3 friction1Over30;
     private Vector3 curVel = new Vector3(0, 0, 0), lastFrameVel = new Vector3(0, 0, 0);
     private bool applyFriction = false;
     private bool ballHasStopped = true, waitingForStopCheck = false;
     private float ballShotTime = 0, frictionTimeMod = 1;
     private Vector3 defaultGrav = new Vector3(0, -9.81f, 0);
+    private bool hasJustSwung = false;
 
     //Curse vars
     private bool hasMegaBounce = false;
@@ -129,7 +131,17 @@ public class GolfBallManager : MonoBehaviour
         if (!inEndScreen)
         {
             //Keeps track of the golf ball's velocity for collisions
-            lastFrameVel = curVel;
+            if (!hasJustSwung)
+            {
+                lastFrameVel = curVel;
+            }
+            else
+            {
+                if (golfBallRb.velocity.magnitude != 0)
+                {
+                    hasJustSwung = false;
+                }
+            }
             curVel = golfBallRb.velocity;
 
             if (!ballHasStopped && !ballInAnim)
@@ -148,11 +160,16 @@ public class GolfBallManager : MonoBehaviour
                                                     (icyTurns > 0 ? .5f : 1) * (airBallTurns > 0 ? .5f : 1) *
                                                     frictionTimeMod * Time.deltaTime)
                 {
-                    golfBallRb.velocity -= golfBallRb.velocity.normalized * friction * (usedSpikeBall ? 2 : 1)
-                                           * (usingFireball ? 0 : 1) * Time.deltaTime;
+                    friction1Over30 = golfBallRb.velocity.normalized * friction * (usedSpikeBall ? 2 : 1) * (usingFireball ? 0 : 1) *
+                                           (icyTurns > 0 ? .5f : 1) * (airBallTurns > 0 ? .5f : 1) *
+                                           frictionTimeMod;
+                    golfBallRb.velocity -= golfBallRb.velocity.normalized * friction * (usedSpikeBall ? 2 : 1) * (usingFireball ? 0 : 1) *
+                                           (icyTurns > 0 ? .5f : 1) * (airBallTurns > 0 ? .5f : 1) *
+                                           frictionTimeMod * Time.deltaTime;
                 }
                 else if (!ballHasStopped && !waitingForStopCheck)
                 {
+                    Debug.Log(golfBallRb.velocity.magnitude);
                     golfBallRb.velocity = Vector3.zero;
                     StartCoroutine(BallStopCheck());
                     waitingForStopCheck = true;
@@ -439,6 +456,7 @@ public class GolfBallManager : MonoBehaviour
         ballHasStopped = true;
         waitingForStopCheck = false;
         ballShotTime = 0;
+        frictionTimeMod = 1;
         curHitPos = transform.position;
         if (usingGlide)
         {
@@ -460,16 +478,19 @@ public class GolfBallManager : MonoBehaviour
         golfBallRb.constraints = RigidbodyConstraints.None;
         if (curShotType == 1)
         {
-            golfBallRb.AddForce(power * barPercentage * (power * (tri.transform.position -
-                                triRotator.transform.position).normalized + new Vector3(0, 7, 0)).normalized,
-                                ForceMode.Impulse);
+            Vector3 forceToAdd = power * barPercentage * (power * (tri.transform.position -
+                                triRotator.transform.position).normalized + new Vector3(0, 7, 0)).normalized;
+            golfBallRb.AddForce(forceToAdd, ForceMode.Impulse);
+            lastFrameVel = forceToAdd;
         }
         else
         {
-            golfBallRb.AddForce(power * barPercentage * (tri.transform.position - triRotator.transform.position).normalized,
-                                ForceMode.Impulse);
+            Vector3 forceToAdd = power * barPercentage * (tri.transform.position - triRotator.transform.position).normalized;
+            golfBallRb.AddForce(forceToAdd, ForceMode.Impulse);
+            lastFrameVel = forceToAdd;
         }
 
+        hasJustSwung = true;
         tri.SetActive(false);
         powerBar.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 0);
         barPercentage = 0;
@@ -542,6 +563,7 @@ public class GolfBallManager : MonoBehaviour
             ballHasStopped = true;
             waitingForStopCheck = false;
             ballShotTime = 0;
+            frictionTimeMod = 1;
             curHitPos = transform.position;
             if (usingGlide)
             {
@@ -626,7 +648,15 @@ public class GolfBallManager : MonoBehaviour
                 Physics.Raycast(transform.position, collision.transform.position - transform.position, out RaycastHit hitInfo);
                 golfBallRb.velocity = lastFrameVel;
                 golfBallRb.velocity -= 2 * Vector3.Dot(golfBallRb.velocity, hitInfo.normal) * hitInfo.normal;
-                golfBallRb.velocity *= collision.gameObject.GetComponent<Enemy>().bounciness;
+                if ((golfBallRb.velocity * collision.gameObject.GetComponent<Enemy>().bounciness).magnitude > friction1Over30.magnitude)
+                {
+                    Debug.Log("Used Bounciness");
+                    golfBallRb.velocity *= collision.gameObject.GetComponent<Enemy>().bounciness;
+                }
+                else
+                {
+                    golfBallRb.velocity *= friction1Over30.magnitude / golfBallRb.velocity.magnitude;
+                }
                 if (hasMegaBounce)
                 {
                     golfBallRb.velocity *= 4;
