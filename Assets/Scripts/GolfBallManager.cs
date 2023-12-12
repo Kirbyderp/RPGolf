@@ -41,6 +41,9 @@ public class GolfBallManager : MonoBehaviour
     private bool ballInAnim = false;
     private Vector3 lastHitPos, curHitPos;
     private GameObject[] allEnemies;
+    private bool[] canRotateAtDegree = new bool[12];
+    private GameObject sirPuttsAlot;
+    private bool inBackupPosition = false;
 
     //Ball physics vars
     private Rigidbody golfBallRb;
@@ -73,6 +76,7 @@ public class GolfBallManager : MonoBehaviour
 
     //Debug Vars
     public bool isDebugMode;
+    //public GameObject castEndObj, test;
 
     // Start is called before the first frame update
     void Start()
@@ -116,6 +120,17 @@ public class GolfBallManager : MonoBehaviour
         tri.SetActive(false);
         golfBallRb = GetComponent<Rigidbody>();
 
+        for (int deg30 = 0; deg30 < 12; deg30++)
+        {
+            /*Instantiate(castEndObj,
+                        triRotator.transform.position + 3 * new Vector3(-Mathf.Cos(deg30 * Mathf.PI / 6), 0, Mathf.Sin(deg30 * Mathf.PI / 6)),
+                        Quaternion.Euler(Vector3.zero),
+                        test.transform);*/
+            canRotateAtDegree[deg30] = !Physics.Linecast(triRotator.transform.position,
+                                                         triRotator.transform.position + 3 * new Vector3(-Mathf.Cos(deg30 * Mathf.PI / 6), 0, Mathf.Sin(deg30 * Mathf.PI / 6)));
+        }
+
+        sirPuttsAlot = GameObject.Find("Sir Puttsalot");
         sirPuttAnim = GameObject.Find("Sir Puttsalot").GetComponent<SirPuttAnimController>();
 
         leftCurveLoc = GameObject.Find("Left Curve Loc");
@@ -129,6 +144,9 @@ public class GolfBallManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        //test.transform.rotation = Quaternion.Euler(Vector3.zero);
+
+
         if (!inEndScreen)
         {
             //Keeps track of the golf ball's velocity for collisions
@@ -301,7 +319,39 @@ public class GolfBallManager : MonoBehaviour
                     }
                     if (ballHasStopped)
                     {
-                        triRotatorCopy.transform.rotation = triRotator.transform.rotation;
+                        float curRotation = triRotator.transform.rotation.eulerAngles.y;
+                        if (!inBackupPosition)
+                        {
+                            if (canRotateAtDegree[(int)((curRotation) % 360 / 30)] && canRotateAtDegree[(int)((curRotation + 30) % 360 / 30)])
+                            {
+                                sirPuttsAlot.transform.localScale = new Vector3(1, 1, 1);
+                                triRotatorCopy.transform.rotation = triRotator.transform.rotation;
+                            }
+                            else if (canRotateAtDegree[(int)((curRotation + 180) % 360 / 30)] && canRotateAtDegree[(int)((curRotation + 210) % 360 / 30)])
+                            {
+                                sirPuttsAlot.transform.localScale = new Vector3(1, 1, -1);
+                                triRotatorCopy.transform.rotation = Quaternion.Euler(triRotator.transform.rotation.eulerAngles.x,
+                                                                                     triRotator.transform.rotation.eulerAngles.y + 180,
+                                                                                     triRotator.transform.rotation.eulerAngles.z);
+                                inBackupPosition = true;
+                            }
+                        }
+                        else
+                        {
+                            if (canRotateAtDegree[(int)((curRotation + 180) % 360 / 30)] && canRotateAtDegree[(int)((curRotation + 210) % 360 / 30)])
+                            {
+                                sirPuttsAlot.transform.localScale = new Vector3(1, 1, -1);
+                                triRotatorCopy.transform.rotation = Quaternion.Euler(triRotator.transform.rotation.eulerAngles.x,
+                                                                                     triRotator.transform.rotation.eulerAngles.y + 180,
+                                                                                     triRotator.transform.rotation.eulerAngles.z);
+                            }
+                            else if (canRotateAtDegree[(int)((curRotation) % 360 / 30)] && canRotateAtDegree[(int)((curRotation + 30) % 360 / 30)])
+                            {
+                                sirPuttsAlot.transform.localScale = new Vector3(1, 1, 1);
+                                triRotatorCopy.transform.rotation = triRotator.transform.rotation;
+                                inBackupPosition = false;
+                            }
+                        }
                     }
                     if (mouseDif.magnitude < 250)
                     {
@@ -560,6 +610,11 @@ public class GolfBallManager : MonoBehaviour
                                             frictionTimeMod * Time.deltaTime) && !waitingForDamageAnim)
         {
             ballInAnim = true;
+            for (int deg30 = 0; deg30 < 12; deg30++)
+            {
+                canRotateAtDegree[deg30] = !Physics.Linecast(triRotator.transform.position,
+                                                             triRotator.transform.position + 3 * new Vector3(-Mathf.Cos(deg30 * Mathf.PI / 6), 0, Mathf.Sin(deg30 * Mathf.PI / 6)));
+            }
             golfBallRb.velocity = Vector3.zero;
             golfBallRb.constraints = RigidbodyConstraints.FreezeAll;
             ballHasStopped = true;
@@ -584,7 +639,7 @@ public class GolfBallManager : MonoBehaviour
                 transform.localScale = new Vector3(.5f, .5f, .5f);
             }
             icyTurns--;
-            if (curHitPos == lastHitPos)
+            if ((curHitPos - lastHitPos).magnitude < .5f)
             {
                 ballInAnim = false;
             }
@@ -599,9 +654,20 @@ public class GolfBallManager : MonoBehaviour
         }
     }
 
+    public bool CanRotateAtDegree30(int index)
+    {
+        return canRotateAtDegree[index];
+    }
+
     public void SetBallInAnim(bool input)
     {
         ballInAnim = input;
+    }
+
+    public void ResetSirPuttsalot()
+    {
+        inBackupPosition = false;
+        sirPuttsAlot.transform.localScale = new Vector3(1, 1, 1);
     }
 
     private void OnCollisionEnter(Collision collision)

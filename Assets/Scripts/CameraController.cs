@@ -31,7 +31,7 @@ public class CameraController : MonoBehaviour
         {
             camRotator.transform.Rotate(new Vector3(0, -1, 0) * speed * Time.deltaTime, Space.Self);
         }
-        if (Physics.Raycast(camRotator.transform.position, mainCamera.transform.position - camRotator.transform.position, out RaycastHit hitInfo, 24.4f))
+        if (Physics.Raycast(camRotator.transform.position, mainCamera.transform.position - camRotator.transform.position, out RaycastHit hitInfo, 24.4f, 2))
         {
             if ((hitInfo.point - camRotator.transform.position).magnitude < maxCamDistance)
             {

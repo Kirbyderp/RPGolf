@@ -63,7 +63,8 @@ public class PlayerInfo
                                                                  "before shot abilities.",};
     public static readonly Sprite[] REWARD_IMAGES = new Sprite[] { /* Use Resources.Load([FilePath])*/ };
 
-    public static readonly int[] LEVEL_EXP_THRESHOLDS = new int[] { 0, 50, 100, 150, 200, 250, 100000 };
+    public static readonly int[] LEVEL_EXP_THRESHOLDS = new int[] { 0, 50, 100, 200, 400, 500, 500, 500, 500, 500, 500, 500, 500, 
+                                                                    500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500 };
 
     private static List<PlayerInfo> players = new List<PlayerInfo>();
 
