@@ -52,6 +52,7 @@ public class GolfBallManager : MonoBehaviour
     private float ballShotTime = 0, frictionTimeMod = 1;
     private Vector3 defaultGrav = new Vector3(0, -9.81f, 0);
     private bool hasJustSwung = false;
+    private bool waitingForDamageAnim = false;
 
     //Curse vars
     private bool hasMegaBounce = false;
@@ -167,9 +168,9 @@ public class GolfBallManager : MonoBehaviour
                                            (icyTurns > 0 ? .5f : 1) * (airBallTurns > 0 ? .5f : 1) *
                                            frictionTimeMod * Time.deltaTime;
                 }
-                else if (!ballHasStopped && !waitingForStopCheck)
+                else if (!ballHasStopped && !waitingForStopCheck && !waitingForDamageAnim)
                 {
-                    Debug.Log(golfBallRb.velocity.magnitude);
+                    //Debug.Log(golfBallRb.velocity.magnitude);
                     golfBallRb.velocity = Vector3.zero;
                     StartCoroutine(BallStopCheck());
                     waitingForStopCheck = true;
@@ -458,6 +459,7 @@ public class GolfBallManager : MonoBehaviour
         ballShotTime = 0;
         frictionTimeMod = 1;
         curHitPos = transform.position;
+        waitingForDamageAnim = false;
         if (usingGlide)
         {
             usedGlide = true;
@@ -553,9 +555,9 @@ public class GolfBallManager : MonoBehaviour
     IEnumerator BallStopCheck()
     {
         yield return new WaitForSeconds(1);
-        if (golfBallRb.velocity.magnitude < friction * (usedSpikeBall ? 2 : 1) *
+        if ((golfBallRb.velocity.magnitude < friction * (usedSpikeBall ? 2 : 1) *
                                             (icyTurns > 0 ? .5f : 1) * (airBallTurns > 0 ? .5f : 1) * 
-                                            frictionTimeMod * Time.deltaTime)
+                                            frictionTimeMod * Time.deltaTime) && !waitingForDamageAnim)
         {
             ballInAnim = true;
             golfBallRb.velocity = Vector3.zero;
@@ -688,7 +690,15 @@ public class GolfBallManager : MonoBehaviour
             { // ...reset its position to the last hit position if they have no shield.
                 ResetBallPosition(lastHitPos);
             }
-        }    
+        }  
+        
+        if (collision.gameObject.CompareTag("Delayed Damage"))
+        {
+            waitingForDamageAnim = true;
+            golfBallRb.constraints = RigidbodyConstraints.FreezeAll;
+            StopCoroutine(BallStopCheck());
+            StartCoroutine(DelayedDamage());
+        }
     }
 
     private void OnCollisionStay(Collision collision)
@@ -703,6 +713,12 @@ public class GolfBallManager : MonoBehaviour
     {
         //Ball is no longer touching object, stop applying friction
         applyFriction = false;
+    }
+
+    IEnumerator DelayedDamage()
+    {
+        yield return new WaitForSeconds(1);
+        ResetBallPosition(lastHitPos);
     }
 
     public void UpdateExpBar()

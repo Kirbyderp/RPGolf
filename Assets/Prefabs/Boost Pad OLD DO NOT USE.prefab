@@ -58,7 +58,7 @@ GameObject:
   - component: {fileID: 5303993788816028644}
   - component: {fileID: 647297757947263482}
   m_Layer: 0
-  m_Name: Boost Pad
+  m_Name: Boost Pad OLD DO NOT USE
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -26,7 +26,7 @@ public class Enemy : MonoBehaviour
     //Returns true if the damage taken is enough to kill the enemy, false otherwise
     public bool TakeDamage(float velIn)
     {
-        Debug.Log(velIn);
+        //Debug.Log(velIn);
         curHP = (int)(curHP - velIn);
         
         if (curHP <= 0)
