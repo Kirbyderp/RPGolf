@@ -36,7 +36,6 @@ public class SpikePad : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        Debug.Log(waitTime);
         waitTime = 0;
     }
 
@@ -44,10 +43,10 @@ public class SpikePad : MonoBehaviour
     {
         for (int frameNum = 0; frameNum < 7; frameNum++)
         {
-            spikeChild.localPosition = new Vector3 (spikeChild.localPosition.x, spikeChild.localPosition.y + 4, spikeChild.localPosition.z);
+            spikeChild.localPosition = new Vector3 (spikeChild.localPosition.x, spikeChild.localPosition.y + .3f/7, spikeChild.localPosition.z);
             yield return new WaitForSeconds(1 / 60f);
         }
-        spikeChild.localPosition = new Vector3(0, 10, 0);
+        spikeChild.localPosition = new Vector3(0, -.7f, 0);
         yield return new WaitForSeconds(2);
         StartCoroutine(LowerSpikes());
     }
@@ -56,10 +55,10 @@ public class SpikePad : MonoBehaviour
     {
         for (int frameNum = 0; frameNum < 60; frameNum++)
         {
-            spikeChild.localPosition = new Vector3(spikeChild.localPosition.x, spikeChild.localPosition.y - 28/60f, spikeChild.localPosition.z);
+            spikeChild.localPosition = new Vector3(spikeChild.localPosition.x, spikeChild.localPosition.y - .3f/60f, spikeChild.localPosition.z);
             yield return new WaitForSeconds(1 / 60f);
         }
-        spikeChild.localPosition = new Vector3(0, -18, 0);
+        spikeChild.localPosition = new Vector3(0, -1, 0);
         spikesAreLowered = true;
     }
 }

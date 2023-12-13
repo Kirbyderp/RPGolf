@@ -31,12 +31,20 @@ public class CameraController : MonoBehaviour
         {
             camRotator.transform.Rotate(new Vector3(0, -1, 0) * speed * Time.deltaTime, Space.Self);
         }
-        if (Physics.Raycast(camRotator.transform.position, mainCamera.transform.position - camRotator.transform.position, out RaycastHit hitInfo, 24.4f, 2))
+        if (Physics.Raycast(camRotator.transform.position, mainCamera.transform.position - camRotator.transform.position, out RaycastHit hitInfo, 24.4f))
         {
             if ((hitInfo.point - camRotator.transform.position).magnitude < maxCamDistance)
             {
-                mainCamera.transform.localPosition *= (hitInfo.point - camRotator.transform.position).magnitude / curCamDistance;
-                curCamDistance = (hitInfo.point - camRotator.transform.position).magnitude;
+                if ((hitInfo.point - camRotator.transform.position).magnitude > 1.15f)
+                {
+                    mainCamera.transform.localPosition *= (hitInfo.point - camRotator.transform.position).magnitude / curCamDistance;
+                    curCamDistance = (hitInfo.point - camRotator.transform.position).magnitude;
+                }
+                else if (curCamDistance != 1.15f)
+                {
+                    mainCamera.transform.localPosition *= 1.15f / curCamDistance;
+                    curCamDistance = 1.15f;
+                }
             }
         }
         else if (curCamDistance < maxCamDistance)

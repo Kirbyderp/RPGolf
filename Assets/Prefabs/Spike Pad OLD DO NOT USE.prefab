@@ -80,7 +80,7 @@ GameObject:
   - component: {fileID: 5303993788816028644}
   - component: {fileID: 8970314237515581116}
   m_Layer: 0
-  m_Name: Spike Pad
+  m_Name: Spike Pad OLD DO NOT USE
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -20,7 +20,8 @@ public class GolfBallManager : MonoBehaviour
     private int nextAbilityKey = 1;
     private KeyCode[] abilityKeys = new KeyCode[12];
     private int timesJumped = 0;
-    private bool usedSpikeBall = false;
+    private bool usedSpikeBall = false, inSpikeBallEndAnim = false;
+    private GameObject spikesModel;
     private bool usingFireball = false, usedFireball = false;
     private bool usingGlide = false, usedGlide = false;
     private bool usedDoOver = false;
@@ -28,7 +29,6 @@ public class GolfBallManager : MonoBehaviour
     private float fireballTimer = 0, fireballDuration = 2;
     private int shieldsUsed = 0;
     private GameObject leftCurveLoc, rightCurveLoc;
-
 
     //Hitting the ball vars
     private GameObject camRotator;
@@ -133,6 +133,7 @@ public class GolfBallManager : MonoBehaviour
         sirPuttsAlot = GameObject.Find("Sir Puttsalot");
         sirPuttAnim = GameObject.Find("Sir Puttsalot").GetComponent<SirPuttAnimController>();
 
+        spikesModel = GameObject.Find("Golf Ball Spikes");
         leftCurveLoc = GameObject.Find("Left Curve Loc");
         rightCurveLoc = GameObject.Find("Right Curve Loc");
 
@@ -200,7 +201,8 @@ public class GolfBallManager : MonoBehaviour
             {
                 if (usedSpikeBall && ballHasStopped)
                 {
-                    Debug.Log("Deactivated Spike Ball");
+                    //Debug.Log("Deactivated Spike Ball");
+                    StartCoroutine(SpikeBallEndAnim());
                     usedSpikeBall = false;
                 }
 
@@ -403,7 +405,8 @@ public class GolfBallManager : MonoBehaviour
                 //Spike Ball
                 if (player.HasAbility(3) && Input.GetKeyDown(abilityKeys[3]) && !usedSpikeBall)
                 {
-                    Debug.Log("Activated Spike Ball");
+                    //Debug.Log("Activated Spike Ball");
+                    StartCoroutine(SpikeBallStartAnim());
                     usedSpikeBall = true;
                 }
 
@@ -563,6 +566,35 @@ public class GolfBallManager : MonoBehaviour
                 UpdateExpBar();
             }
         }
+    }
+
+    IEnumerator SpikeBallStartAnim()
+    {
+        for (int frameNum = 0; frameNum <= 20; frameNum++)
+        {
+            spikesModel.transform.localScale = new Vector3(spikesModel.transform.localScale.x +.03f,
+                                                           spikesModel.transform.localScale.y + .03f,
+                                                           spikesModel.transform.localScale.z + .03f);
+            yield return new WaitForSeconds(1 / 60f);
+        }
+        if (!inSpikeBallEndAnim)
+        {
+            spikesModel.transform.localScale = new Vector3(1, 1, 1);
+        }
+    }
+
+    IEnumerator SpikeBallEndAnim()
+    {
+        inSpikeBallEndAnim = true;
+        for (int frameNum = 0; frameNum <= 40; frameNum++)
+        {
+            spikesModel.transform.localScale = new Vector3(spikesModel.transform.localScale.x - .015f,
+                                                           spikesModel.transform.localScale.y - .015f,
+                                                           spikesModel.transform.localScale.z - .015f);
+            yield return new WaitForSeconds(1 / 60f);
+        }
+        spikesModel.transform.localScale = new Vector3(.4f, .4f, .4f);
+        inSpikeBallEndAnim = false;
     }
 
     public void FreeFireball()
