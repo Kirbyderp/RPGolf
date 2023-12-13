@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class Powerup : MonoBehaviour
 {
+    private bool appliedPowerup = false;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -16,10 +18,17 @@ public class Powerup : MonoBehaviour
         
     }
 
-    private void OnTriggerExit(Collider other)
+    IEnumerator DestroyTimer()
     {
-        if (other.CompareTag("Golf Ball"))
+        yield return new WaitForSeconds(.5f);
+        Destroy(gameObject);
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Golf Ball") && !appliedPowerup)
         {
+            appliedPowerup = true;
             if (gameObject.CompareTag("Fireball"))
             {
                 other.gameObject.GetComponent<GolfBallManager>().FreeFireball();
@@ -28,22 +37,26 @@ public class Powerup : MonoBehaviour
             else if (gameObject.CompareTag("Air Ball"))
             {
                 other.gameObject.GetComponent<GolfBallManager>().GainAirBall();
-                Destroy(gameObject);
+                gameObject.GetComponent<Animator>().SetTrigger("Curse");
+                StartCoroutine(DestroyTimer());
             }
             else if (gameObject.CompareTag("Mega Bounce"))
             {
                 other.gameObject.GetComponent<GolfBallManager>().GainMegaBounce();
-                Destroy(gameObject);
+                gameObject.GetComponent<Animator>().SetTrigger("Curse");
+                StartCoroutine(DestroyTimer());
             }
             else if (gameObject.CompareTag("Tiny Ball"))
             {
                 other.gameObject.GetComponent<GolfBallManager>().GainTinyBall();
-                Destroy(gameObject);
+                gameObject.GetComponent<Animator>().SetTrigger("Curse");
+                StartCoroutine(DestroyTimer());
             }
             else if (gameObject.CompareTag("Ice Physics"))
             {
                 other.gameObject.GetComponent<GolfBallManager>().GainIcePhysics();
-                Destroy(gameObject);
+                gameObject.GetComponent<Animator>().SetTrigger("Curse");
+                StartCoroutine(DestroyTimer());
             }
         }
     }

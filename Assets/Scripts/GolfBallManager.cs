@@ -636,6 +636,7 @@ public class GolfBallManager : MonoBehaviour
             tinyTurns--;
             if (tinyTurns == 0)
             {
+                transform.position = new Vector3(transform.position.x, transform.position.y + .125f, transform.position.z);
                 transform.localScale = new Vector3(.5f, .5f, .5f);
             }
             icyTurns--;
