@@ -34,7 +34,7 @@ public class GolfBallManager : MonoBehaviour
     private GameObject camRotator;
     private Vector3 mouseStarterPos, mousePos;
     private bool planningShot = false, mouseOverLevelUp = false;
-    private GameObject powerBar, triRotator, tri, triRotatorCopy;
+    private GameObject powerBar, triRotator, tri, triRotatorCopy, hitDir2D, hitDir2DUI;
     private float barPercentage = 0;
     private int curShotType = 0; //0 = putt, 1 = chip, 2 = curve left, 3 = curve right
     private SirPuttAnimController sirPuttAnim;
@@ -117,6 +117,9 @@ public class GolfBallManager : MonoBehaviour
         triRotator = GameObject.Find("Tri Rotator");
         tri = GameObject.Find("Tri");
         triRotatorCopy = GameObject.Find("Tri Rotator Copy");
+        hitDir2D = GameObject.Find("2D Hit Dir Rotator");
+        hitDir2DUI = GameObject.Find("Ball Hit Direction UI");
+        hitDir2DUI.SetActive(false);
         tri.SetActive(false);
         golfBallRb = GetComponent<Rigidbody>();
 
@@ -355,9 +358,13 @@ public class GolfBallManager : MonoBehaviour
                             }
                         }
                     }
+                    hitDir2D.transform.rotation = Quaternion.Euler(new Vector3(0, 0,
+                                                                   camRotator.transform.rotation.eulerAngles.y -
+                                                                   triRotator.transform.rotation.eulerAngles.y));
                     if (mouseDif.magnitude < 250)
                     {
-                        powerBar.GetComponent<RectTransform>().sizeDelta = new Vector2(150, mouseDif.magnitude * 700 / 250);
+                        powerBar.GetComponent<RectTransform>().sizeDelta = new Vector2(mouseDif.magnitude * 150 / 250,
+                                                                                       mouseDif.magnitude * 700 / 250);
                         barPercentage = mouseDif.magnitude / 250;
                     }
                     else
@@ -374,6 +381,7 @@ public class GolfBallManager : MonoBehaviour
                     planningShot = true;
                     mouseStarterPos = Input.mousePosition;
                     transform.rotation = camRotator.transform.rotation;
+                    hitDir2DUI.SetActive(true);
                 }
             }
             else if (golfBallRb.velocity.magnitude > 0) //During Shot Ability Activations
