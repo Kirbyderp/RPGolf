@@ -20,6 +20,8 @@ public class GolfBallManager : MonoBehaviour
     private int nextAbilityKey = 1;
     private KeyCode[] abilityKeys = new KeyCode[12];
     private int timesJumped = 0;
+    private GameObject jumpNumUI;
+    private TMPro.TextMeshProUGUI jumpNumText;
     private bool usedSpikeBall = false, inSpikeBallEndAnim = false;
     private GameObject spikesModel;
     private bool usingFireball = false, usedFireball = false;
@@ -28,7 +30,9 @@ public class GolfBallManager : MonoBehaviour
     private bool usedExplosion = false;
     private float fireballTimer = 0, fireballDuration = 2;
     private int shieldsUsed = 0;
+    private GameObject shieldVisual;
     private GameObject leftCurveLoc, rightCurveLoc;
+    private GameObject puttIcon, chipIcon, curveIcon;
 
     //Hitting the ball vars
     private GameObject camRotator;
@@ -68,6 +72,7 @@ public class GolfBallManager : MonoBehaviour
     private bool inEndScreen = false, waitingOnEndAnim = false;
     private GameObject holeEndUIBackground;
     private string sceneToGoTo;
+    private TMPro.TextMeshProUGUI ehStrokeText, ehParText, ehRewardText;
 
     //KeyCodes
     KeyCode chipShotKey = KeyCode.W;
@@ -89,7 +94,7 @@ public class GolfBallManager : MonoBehaviour
         else
         {
             player = PlayerInfo.GetPlayers()[0];
-            playerLevel = player.GetLevel();
+            playerLevel = player.GetGolfBallLevel();
         }
         camRotator = GameObject.Find("Camera Rotator");
         powerBar = GameObject.Find("Power Bar");
@@ -122,6 +127,27 @@ public class GolfBallManager : MonoBehaviour
         hitDir2DUI.SetActive(false);
         tri.SetActive(false);
         golfBallRb = GetComponent<Rigidbody>();
+        shieldVisual = GameObject.Find("Golf Ball Shield Buff");
+        if (shieldsUsed >= player.GetShieldsPerLevel())
+        {
+            shieldVisual.SetActive(false);
+        }
+        jumpNumText = GameObject.Find("Jump Number UI Text").GetComponent<TMPro.TextMeshProUGUI>();
+        jumpNumUI = GameObject.Find("Jump Number UI");
+        if (player.HasAbility(1))
+        {
+            jumpNumText.text = player.GetJumpsPerLevel() + "";
+        }
+        else
+        {
+            jumpNumUI.SetActive(false);
+        }
+        puttIcon = GameObject.Find("Putt Shot Icon");
+        chipIcon = GameObject.Find("Chip Shot Icon");
+        curveIcon = GameObject.Find("Curve Shot Icon");
+        puttIcon.SetActive(false);
+        chipIcon.SetActive(false);
+        curveIcon.SetActive(false);
 
         for (int deg30 = 0; deg30 < 12; deg30++)
         {
@@ -143,6 +169,9 @@ public class GolfBallManager : MonoBehaviour
         curHitPos = transform.position;
 
         holeEndUIBackground = GameObject.Find("Hole End Background");
+        ehStrokeText = GameObject.Find("End Hole Stroke Text").GetComponent<TMPro.TextMeshProUGUI>();
+        ehParText = GameObject.Find("End Hole Par Text").GetComponent<TMPro.TextMeshProUGUI>();
+        ehRewardText = GameObject.Find("End Hole EXP Reward Text").GetComponent<TMPro.TextMeshProUGUI>();
     }
 
     // Update is called once per frame
@@ -215,11 +244,17 @@ public class GolfBallManager : MonoBehaviour
                     if (curShotType == 1)
                     {
                         curShotType = 0;
+                        puttIcon.SetActive(true);
+                        chipIcon.SetActive(false);
+                        curveIcon.SetActive(false);
                         Debug.Log("Current Shot Type: Putt");
                     }
                     else
                     {
                         curShotType = 1;
+                        puttIcon.SetActive(false);
+                        chipIcon.SetActive(true);
+                        curveIcon.SetActive(false);
                         Debug.Log("Current Shot Type: Chip");
                     }
                 }
@@ -229,16 +264,25 @@ public class GolfBallManager : MonoBehaviour
                     if (curShotType == 2)
                     {
                         curShotType = 3;
+                        puttIcon.SetActive(false);
+                        chipIcon.SetActive(false);
+                        curveIcon.SetActive(true);
                         Debug.Log("Current Shot Type: Curve Right");
                     }
                     else if (curShotType == 3)
                     {
                         curShotType = 0;
+                        puttIcon.SetActive(true);
+                        chipIcon.SetActive(false);
+                        curveIcon.SetActive(false);
                         Debug.Log("Current Shot Type: Putt");
                     }
                     else
                     {
                         curShotType = 2;
+                        puttIcon.SetActive(false);
+                        chipIcon.SetActive(false);
+                        curveIcon.SetActive(true);
                         Debug.Log("Current Shot Type: Curve Left");
                     }
                 }
@@ -379,6 +423,18 @@ public class GolfBallManager : MonoBehaviour
                 if (Input.GetMouseButtonDown(0) && !mouseOverLevelUp)
                 {
                     planningShot = true;
+                    if (curShotType == 0)
+                    {
+                        puttIcon.SetActive(true);
+                    }
+                    else if (curShotType == 1)
+                    {
+                        chipIcon.SetActive(true);
+                    }
+                    else
+                    {
+                        curveIcon.SetActive(true);
+                    }
                     mouseStarterPos = Input.mousePosition;
                     transform.rotation = camRotator.transform.rotation;
                     hitDir2DUI.SetActive(true);
@@ -392,6 +448,7 @@ public class GolfBallManager : MonoBehaviour
                     Debug.Log("Jumped");
                     golfBallRb.AddForce(player.GetJumpStrength() * Vector3.up, ForceMode.Impulse);
                     timesJumped++;
+                    jumpNumText.text = (int.Parse(jumpNumText.text) - 1) + "";
                     if (timesJumped >= player.GetJumpsPerLevel())
                     {
                         Debug.Log("Now out of jumps");
@@ -558,6 +615,11 @@ public class GolfBallManager : MonoBehaviour
         powerBar.GetComponent<RectTransform>().sizeDelta = new Vector2(150, 0);
         barPercentage = 0;
         powerBar.GetComponent<Image>().color = GetBarColor();
+
+        puttIcon.SetActive(false);
+        chipIcon.SetActive(false);
+        curveIcon.SetActive(false);
+        hitDir2DUI.SetActive(false);
 
         numStrokes++;
         lastShotOB = false;
@@ -792,6 +854,10 @@ public class GolfBallManager : MonoBehaviour
                     hasMegaBounce = false;
                 }
                 curVel = golfBallRb.velocity;
+                if (shieldsUsed >= player.GetShieldsPerLevel())
+                {
+                    shieldVisual.SetActive(false);
+                }
             }
             else
             { // ...reset its position to the last hit position if they have no shield.
@@ -848,6 +914,7 @@ public class GolfBallManager : MonoBehaviour
             inLevelUpScreen = true;
             waitingForLevelUpAnim = true;
             playerLevel++;
+            player.AddGolfBallLevel();
             switch (playerLevel)
             {
                 case 2:
@@ -964,6 +1031,19 @@ public class GolfBallManager : MonoBehaviour
     {
         waitingForLevelUpAnim = true;
         player.GainAbility(abilityCode);
+        if (abilityCode == 1)
+        {
+            jumpNumUI.SetActive(true);
+            jumpNumText.text = "2";
+        }
+        if (abilityCode == 5)
+        {
+            shieldVisual.SetActive(true);
+        }
+        if (abilityCode == 8)
+        {
+            jumpNumText.text = (int.Parse(jumpNumText.text) + 2) + "";
+        }
         if (PlayerInfo.IS_GENERIC_KEY[abilityCode])
         {
             abilityKeys[abilityCode] = GetNextKey();
@@ -1013,23 +1093,64 @@ public class GolfBallManager : MonoBehaviour
         }
     }
 
-    public void FinishHole(string sceneIn)
+    public void FinishHole(string sceneIn, int parIn)
     {
         sceneToGoTo = sceneIn;
         golfBallRb.constraints = RigidbodyConstraints.FreezeAll;
+        ehStrokeText.text = numStrokes + "";
+        ehParText.text = parIn + "";
         if (!inLevelUpScreen)
         {
             inEndScreen = true;
             waitingOnEndAnim = true;
+            if (numStrokes == 1)
+            {
+                if (player.GainEXP(400))
+                {
+                    player.SetWaitingForLevelUp(true);
+                    LevelUpNotif();
+                }
+                else
+                {
+                    UpdateExpBar();
+                }
+                ehRewardText.text = 400 + "";
+            }
+            else if (numStrokes <= parIn - 4)
+            {
+                if (player.GainEXP(200))
+                {
+                    player.SetWaitingForLevelUp(true);
+                    LevelUpNotif();
+                }
+                else
+                {
+                    UpdateExpBar();
+                }
+                ehRewardText.text = 200 + "";
+            }
+            else if (numStrokes <= parIn)
+            {
+                if (player.GainEXP(50 + 50 * (parIn - numStrokes)))
+                {
+                    player.SetWaitingForLevelUp(true);
+                    LevelUpNotif();
+                }
+                else
+                {
+                    UpdateExpBar();
+                }
+                ehRewardText.text = (50 + 50 * (parIn - numStrokes)) + "";
+            }
             InvokeRepeating("HoleEndUIEnterAnim", 0, 1 / 60f);
         }
         else
         {
-            StartCoroutine(BufferHoleEndUI());
+            StartCoroutine(BufferHoleEndUI(parIn));
         }
     }
 
-    IEnumerator BufferHoleEndUI()
+    IEnumerator BufferHoleEndUI(int parIn)
     {
         bool waiting = true;
         while (waiting)
@@ -1040,6 +1161,53 @@ public class GolfBallManager : MonoBehaviour
                 waiting = false;
                 inEndScreen = true;
                 waitingOnEndAnim = true;
+                if (numStrokes == 1)
+                {
+                    if (player.GainEXP(400))
+                    {
+                        player.SetWaitingForLevelUp(true);
+                        LevelUpNotif();
+                    }
+                    else
+                    {
+                        UpdateExpBar();
+                    }
+                    ehRewardText.text = 400 + "";
+                }
+                else if (numStrokes <= parIn - 4)
+                {
+                    if (player.GainEXP(200))
+                    {
+                        player.SetWaitingForLevelUp(true);
+                        LevelUpNotif();
+                    }
+                    else
+                    {
+                        UpdateExpBar();
+                    }
+                    ehRewardText.text = 200 + "";
+                }
+                else if (numStrokes <= parIn)
+                {
+                    if (player.GainEXP(50 + 50 * (parIn - numStrokes)))
+                    {
+                        player.SetWaitingForLevelUp(true);
+                        LevelUpNotif();
+                    }
+                    else
+                    {
+                        UpdateExpBar();
+                    }
+                    ehRewardText.text = (50 + 50 * (parIn - numStrokes)) + "";
+                }
+                if (player.WaitingForLevelUp())
+                {
+                    LevelUpNotif();
+                }
+                else
+                {
+                    UpdateExpBar();
+                }
                 InvokeRepeating("HoleEndUIEnterAnim", 0, 1 / 60f);
             }
         }
