@@ -56,7 +56,21 @@ ModelImporter:
       mirror: 0
       bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
       curves: []
-      events: []
+      events:
+      - time: 0
+        functionName: StartSlam
+        data: 
+        objectReferenceParameter: {fileID: 919132149155446097, guid: 5cd563ff129c2cd4da804ed6a24c9325, type: 3}
+        floatParameter: 0
+        intParameter: 0
+        messageOptions: 0
+      - time: 0.05992509
+        functionName: EndSlam
+        data: 
+        objectReferenceParameter: {fileID: 919132149155446097, guid: 5cd563ff129c2cd4da804ed6a24c9325, type: 3}
+        floatParameter: 0
+        intParameter: 0
+        messageOptions: 0
       transformMask: []
       maskType: 3
       maskSource: {instanceID: 0}

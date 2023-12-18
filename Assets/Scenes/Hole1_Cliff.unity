@@ -80426,6 +80426,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5635429419279923760, guid: f26ab886ce98902418b6785219a386a1, type: 3}
+      propertyPath: isDebugMode
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6248486959418903657, guid: f26ab886ce98902418b6785219a386a1, type: 3}
       propertyPath: m_Name
       value: GolfBallPrefab

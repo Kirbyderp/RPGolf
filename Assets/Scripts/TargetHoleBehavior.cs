@@ -23,7 +23,7 @@ public class TargetHoleBehavior : MonoBehaviour
     {
         if (other.gameObject.CompareTag("Golf Ball"))
         {
-            other.gameObject.GetComponent<GolfBallManager>().FinishHole(sceneToGoTo);
+            other.gameObject.GetComponent<GolfBallManager>().FinishHole(sceneToGoTo, currentHolePar);
         }
     }
 }

@@ -63,12 +63,13 @@ public class PlayerInfo
                                                                  "before shot abilities.",};
     public static readonly Sprite[] REWARD_IMAGES = new Sprite[] { /* Use Resources.Load([FilePath])*/ };
 
-    public static readonly int[] LEVEL_EXP_THRESHOLDS = new int[] { 0, 50, 100, 150, 200, 250, 100000 };
+    public static readonly int[] LEVEL_EXP_THRESHOLDS = new int[] { 0, 50, 100, 200, 400, 500, 500, 500, 500, 500, 500, 500, 500,
+                                                                    500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500, 500 };
 
     private static List<PlayerInfo> players = new List<PlayerInfo>();
 
     private bool[] hasAbilities;
-    private int totalExp, levelExp, level;
+    private int totalExp, levelExp, level, golfBallLevel;
 
     private int jumpsPerLevel, shieldsPerLevel;
     private float damageBonus, jumpStrength;
@@ -81,6 +82,7 @@ public class PlayerInfo
         totalExp = 0;
         levelExp = 0;
         level = 1;
+        golfBallLevel = 1;
         damageBonus = 1;
         jumpsPerLevel = 2;
         jumpStrength = 7;
@@ -98,6 +100,11 @@ public class PlayerInfo
     public int GetLevel()
     {
         return level;
+    }
+
+    public int GetGolfBallLevel()
+    {
+        return golfBallLevel;
     }
 
     //Returns how much exp the player has gained this level
@@ -148,7 +155,12 @@ public class PlayerInfo
         levelExp += expIn;
         if (levelExp >= LEVEL_EXP_THRESHOLDS[level])
         {
-            LevelUp();
+            while (levelExp >= LEVEL_EXP_THRESHOLDS[level])
+            {
+                Debug.Log(levelExp);
+                Debug.Log(level);
+                LevelUp();
+            }
             return true;
         }
         return false;
@@ -179,5 +191,10 @@ public class PlayerInfo
             return;
         }
         hasAbilities[abilityCode] = true;
+    }
+
+    public void AddGolfBallLevel()
+    {
+        golfBallLevel++;
     }
 }

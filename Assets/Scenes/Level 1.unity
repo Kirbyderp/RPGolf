@@ -20278,17 +20278,9 @@ MonoBehaviour:
   m_Mesh: {fileID: 548706125}
   m_VersionIndex: 12222
   m_IsSelectable: 1
-  m_SelectedFaces: 1a000000
-  m_SelectedEdges:
-  - a: 104
-    b: 105
-  - a: 106
-    b: 104
-  - a: 105
-    b: 107
-  - a: 107
-    b: 106
-  m_SelectedVertices: 68000000690000006a0000006b000000
+  m_SelectedFaces: 
+  m_SelectedEdges: []
+  m_SelectedVertices: 
 --- !u!4 &418719761
 Transform:
   m_ObjectHideFlags: 0
@@ -20510,7 +20502,7 @@ MeshCollider:
   serializedVersion: 5
   m_Convex: 0
   m_CookingOptions: 30
-  m_Mesh: {fileID: 1440491406}
+  m_Mesh: {fileID: 1642347981}
 --- !u!33 &444380712
 MeshFilter:
   m_ObjectHideFlags: 10
