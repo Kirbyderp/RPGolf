@@ -37833,7 +37833,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5888226017877151527, guid: a67309bc3ca7bad4183a0e7875e35eb7, type: 3}
       propertyPath: sceneToGoTo
-      value: Dante_Golf_2
+      value: Hole2_Woods
+      objectReference: {fileID: 0}
+    - target: {fileID: 5888226017877151527, guid: a67309bc3ca7bad4183a0e7875e35eb7, type: 3}
+      propertyPath: currentHolePar
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 8832316287635983273, guid: a67309bc3ca7bad4183a0e7875e35eb7, type: 3}
       propertyPath: m_LocalPosition.x
