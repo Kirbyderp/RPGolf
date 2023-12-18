@@ -14,6 +14,8 @@ TagManager:
   - Tiny Ball
   - Ice Physics
   - Delayed Damage
+  - Portal Entrance
+  - Portal Exit
   layers:
   - Default
   - TransparentFX

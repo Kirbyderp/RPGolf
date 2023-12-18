@@ -894,6 +894,12 @@ public class GolfBallManager : MonoBehaviour
         ResetBallPosition(lastHitPos);
     }
 
+    public void PortalTravel(Vector3 relativePosition, Quaternion relativeRotation)
+    {
+        transform.position = relativePosition;
+        golfBallRb.velocity = Quaternion.Inverse(relativeRotation) * golfBallRb.velocity;
+    }
+
     public void UpdateExpBar()
     {
         expBar.GetComponent<RectTransform>().sizeDelta = new Vector2(400f * player.GetLevelExp() /
