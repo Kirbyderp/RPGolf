@@ -72,6 +72,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Swinging Axe
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 2ba7608c87a9aeb4082fe8ac816aaa38, type: 3}
+      propertyPath: m_TagString
+      value: Damage
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -79,6 +83,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2ba7608c87a9aeb4082fe8ac816aaa38, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1048166464091736479}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 2ba7608c87a9aeb4082fe8ac816aaa38, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7130931942977015599}
   m_SourcePrefab: {fileID: 100100000, guid: 2ba7608c87a9aeb4082fe8ac816aaa38, type: 3}
 --- !u!1 &6262010520211234923 stripped
 GameObject:
@@ -106,3 +113,24 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!65 &7130931942977015599
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6262010520211234923}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.039881233, y: 0.13765545, z: 0.056585547}
+  m_Center: {x: 0.00027861446, y: 0.00041931254, z: 0.17622721}
