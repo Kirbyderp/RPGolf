@@ -124,9 +124,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9cfc2191a3c8d3342ac11d8e6fc058f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHP: 25
+  maxHP: 10
   expReward: 10
-  bounciness: 1
+  bounciness: 0.5
+  isGolem: 0
 --- !u!136 &6824382162387089231
 CapsuleCollider:
   m_ObjectHideFlags: 0
