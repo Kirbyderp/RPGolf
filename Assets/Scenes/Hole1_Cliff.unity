@@ -44068,6 +44068,63 @@ Mesh:
     offset: 0
     size: 0
     path: 
+--- !u!1001 &942330415
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 8416714968371796349, guid: 1aa6bba5d57e03c4f800092d2b64cd7b, type: 3}
+      propertyPath: m_Name
+      value: Pg_7
+      objectReference: {fileID: 0}
+    - target: {fileID: 8848145413187407627, guid: 1aa6bba5d57e03c4f800092d2b64cd7b, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 262.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 8848145413187407627, guid: 1aa6bba5d57e03c4f800092d2b64cd7b, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 66.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 8848145413187407627, guid: 1aa6bba5d57e03c4f800092d2b64cd7b, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 40.134323
+      objectReference: {fileID: 0}
+    - target: {fileID: 8848145413187407627, guid: 1aa6bba5d57e03c4f800092d2b64cd7b, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8848145413187407627, guid: 1aa6bba5d57e03c4f800092d2b64cd7b, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8848145413187407627, guid: 1aa6bba5d57e03c4f800092d2b64cd7b, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8848145413187407627, guid: 1aa6bba5d57e03c4f800092d2b64cd7b, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8848145413187407627, guid: 1aa6bba5d57e03c4f800092d2b64cd7b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8848145413187407627, guid: 1aa6bba5d57e03c4f800092d2b64cd7b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8848145413187407627, guid: 1aa6bba5d57e03c4f800092d2b64cd7b, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 1aa6bba5d57e03c4f800092d2b64cd7b, type: 3}
 --- !u!43 &943181620
 Mesh:
   m_ObjectHideFlags: 0
@@ -80797,10 +80854,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5635429419279923760, guid: f26ab886ce98902418b6785219a386a1, type: 3}
-      propertyPath: isDebugMode
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 6248486959418903657, guid: f26ab886ce98902418b6785219a386a1, type: 3}
       propertyPath: m_Name
       value: GolfBallPrefab
@@ -92105,3 +92158,4 @@ SceneRoots:
   - {fileID: 1617439383}
   - {fileID: 1197850257}
   - {fileID: 177444078}
+  - {fileID: 942330415}
