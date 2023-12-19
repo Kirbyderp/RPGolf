@@ -75,6 +75,7 @@ public class PlayerInfo
     private float damageBonus, jumpStrength;
 
     private bool waitingForLevelUp;
+    private List<int> strokesPerHole;
 
     public PlayerInfo()
     {
@@ -88,6 +89,7 @@ public class PlayerInfo
         jumpStrength = 7;
         shieldsPerLevel = 0;
         waitingForLevelUp = false;
+        strokesPerHole = new List<int>();
 
         players.Add(this);
     }
@@ -196,5 +198,10 @@ public class PlayerInfo
     public void AddGolfBallLevel()
     {
         golfBallLevel++;
+    }
+
+    public void RecordStrokesForHole(int numStrokes)
+    {
+        strokesPerHole.Add(numStrokes);
     }
 }
