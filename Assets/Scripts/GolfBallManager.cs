@@ -76,6 +76,8 @@ public class GolfBallManager : MonoBehaviour
     private string sceneToGoTo;
     private TMPro.TextMeshProUGUI ehStrokeText, ehParText, ehRewardText;
     private GameObject cutsceneBack;
+    private GameObject inGameUICanvas, cutsceneUICanvas, mainCamera;
+    private AudioSource golfBallHitSource;
 
     //KeyCodes
     KeyCode chipShotKey = KeyCode.W;
@@ -185,6 +187,12 @@ public class GolfBallManager : MonoBehaviour
 
         cutsceneBack = GameObject.Find("Cutscene Background");
         cutsceneBack.SetActive(false);
+
+        inGameUICanvas = GameObject.Find("In Game UI Canvas");
+        cutsceneUICanvas = GameObject.Find("Cutscene UI Canvas");
+        cutsceneUICanvas.SetActive(false);
+        mainCamera = GameObject.Find("Main Camera");
+        golfBallHitSource = GetComponent<AudioSource>();
     }
 
     // Update is called once per frame
@@ -619,7 +627,9 @@ public class GolfBallManager : MonoBehaviour
 
     IEnumerator WaitForBallSwing()
     {
-        yield return new WaitForSeconds(55 / 60f);
+        yield return new WaitForSeconds(45 / 60f);
+        golfBallHitSource.Play();
+        yield return new WaitForSeconds(10 / 60f);
         Swing();
         ballInAnim = false;
     }
@@ -1269,13 +1279,19 @@ public class GolfBallManager : MonoBehaviour
 
     public void LoadCutscene()
     {
+        inGameUICanvas.SetActive(false);
+        cutsceneUICanvas.SetActive(true);
+        camRotator.GetComponent<CameraController>().StopUpdatingCamera();
+        Instantiate(Resources.Load<GameObject>("Objects/Square"));
+        mainCamera.transform.position = new Vector3(1000, 1000, 1000);
+        mainCamera.transform.rotation = Quaternion.Euler(0, 0, 0);
         string pageToLoad = "";
         switch (SceneManager.GetActiveScene().name)
         {
             case "Hole1_Cliff":
                 pageToLoad = "Pg_1_2nd_Half";
                 break;
-            case "Dante_Golf_2":
+            case "Hole2_Woods":
                 pageToLoad = "Pg_2";
                 break;
             case "Hole3_River":
@@ -1284,20 +1300,20 @@ public class GolfBallManager : MonoBehaviour
             case "Hole4_Cave":
                 pageToLoad = "Pg_4";
                 break;
+            case "Hole5_Frog":
+                pageToLoad = "Pg_7";
+                break;
             default:
                 break;
         }
         if (pageToLoad != "")
         {
-            Resources.Load("Narration Elements/" + pageToLoad);
+            Instantiate(Resources.Load("Narration Elements/" + pageToLoad));
         }
     }
 
     public void LoadNextScene()
     {
-        if (inEndScreen && !waitingOnEndAnim)
-        {
-            SceneManager.LoadScene(sceneToGoTo, LoadSceneMode.Single);
-        }
+        SceneManager.LoadScene(sceneToGoTo, LoadSceneMode.Single);
     }
 }

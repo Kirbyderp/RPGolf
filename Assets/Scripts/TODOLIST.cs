@@ -1,7 +1,4 @@
 /* 
- * Cutscenes
-     * NEED ALL SCENE NAMES
-     * NEED FUNCTIONAL ASSETS
  * 
  * Make Main Menu
     * Finish Credits Text
