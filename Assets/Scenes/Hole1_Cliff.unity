@@ -5337,7 +5337,7 @@ GameObject:
   - component: {fileID: 140770264}
   - component: {fileID: 140770263}
   - component: {fileID: 140770262}
-  m_Layer: 2
+  m_Layer: 0
   m_Name: Cylinder (1)
   m_TagString: Bouncy
   m_Icon: {fileID: 0}
@@ -6880,7 +6880,7 @@ GameObject:
   - component: {fileID: 142475584}
   - component: {fileID: 142475583}
   - component: {fileID: 142475582}
-  m_Layer: 2
+  m_Layer: 0
   m_Name: Walls  (2)
   m_TagString: Bouncy
   m_Icon: {fileID: 0}
@@ -10206,7 +10206,7 @@ GameObject:
   - component: {fileID: 197111610}
   - component: {fileID: 197111609}
   - component: {fileID: 197111608}
-  m_Layer: 2
+  m_Layer: 0
   m_Name: curve1
   m_TagString: Bouncy
   m_Icon: {fileID: 0}
@@ -12220,7 +12220,7 @@ GameObject:
   - component: {fileID: 242110348}
   - component: {fileID: 242110347}
   - component: {fileID: 242110346}
-  m_Layer: 2
+  m_Layer: 0
   m_Name: Start Curve
   m_TagString: Bouncy
   m_Icon: {fileID: 0}
@@ -17255,7 +17255,7 @@ GameObject:
   - component: {fileID: 358041330}
   - component: {fileID: 358041329}
   - component: {fileID: 358041328}
-  m_Layer: 2
+  m_Layer: 0
   m_Name: Cylinder
   m_TagString: Bouncy
   m_Icon: {fileID: 0}
@@ -19518,7 +19518,7 @@ GameObject:
   - component: {fileID: 444380713}
   - component: {fileID: 444380712}
   - component: {fileID: 444380711}
-  m_Layer: 2
+  m_Layer: 0
   m_Name: rock spire (2)
   m_TagString: Bouncy
   m_Icon: {fileID: 0}
@@ -24195,7 +24195,7 @@ GameObject:
   - component: {fileID: 484856664}
   - component: {fileID: 484856663}
   - component: {fileID: 484856662}
-  m_Layer: 2
+  m_Layer: 0
   m_Name: Walls  segment (2)
   m_TagString: Bouncy
   m_Icon: {fileID: 0}
@@ -36845,7 +36845,7 @@ GameObject:
   - component: {fileID: 711332268}
   - component: {fileID: 711332267}
   - component: {fileID: 711332266}
-  m_Layer: 2
+  m_Layer: 0
   m_Name: rock spire
   m_TagString: Bouncy
   m_Icon: {fileID: 0}
@@ -41193,7 +41193,7 @@ GameObject:
   - component: {fileID: 840699174}
   - component: {fileID: 840699173}
   - component: {fileID: 840699172}
-  m_Layer: 2
+  m_Layer: 0
   m_Name: curve
   m_TagString: Bouncy
   m_Icon: {fileID: 0}
@@ -43077,7 +43077,7 @@ GameObject:
   - component: {fileID: 845726643}
   - component: {fileID: 845726642}
   - component: {fileID: 845726641}
-  m_Layer: 2
+  m_Layer: 0
   m_Name: rock spire (3)
   m_TagString: Bouncy
   m_Icon: {fileID: 0}
@@ -44388,7 +44388,7 @@ GameObject:
   - component: {fileID: 1001935388}
   - component: {fileID: 1001935387}
   - component: {fileID: 1001935386}
-  m_Layer: 2
+  m_Layer: 0
   m_Name: Ramp
   m_TagString: Bouncy
   m_Icon: {fileID: 0}
@@ -60014,7 +60014,7 @@ GameObject:
   - component: {fileID: 1115812575}
   - component: {fileID: 1115812574}
   - component: {fileID: 1115812573}
-  m_Layer: 2
+  m_Layer: 0
   m_Name: Walls  (6)
   m_TagString: Bouncy
   m_Icon: {fileID: 0}
@@ -63440,7 +63440,7 @@ GameObject:
   - component: {fileID: 1162501135}
   - component: {fileID: 1162501134}
   - component: {fileID: 1162501133}
-  m_Layer: 2
+  m_Layer: 0
   m_Name: Walls  (5)
   m_TagString: Bouncy
   m_Icon: {fileID: 0}
@@ -69923,7 +69923,7 @@ GameObject:
   - component: {fileID: 1197850255}
   - component: {fileID: 1197850254}
   - component: {fileID: 1197850253}
-  m_Layer: 2
+  m_Layer: 0
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -70772,7 +70772,7 @@ GameObject:
   - component: {fileID: 1211744561}
   - component: {fileID: 1211744560}
   - component: {fileID: 1211744559}
-  m_Layer: 2
+  m_Layer: 0
   m_Name: curve1 (1)
   m_TagString: Bouncy
   m_Icon: {fileID: 0}
@@ -77267,7 +77267,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5145908630625680140, guid: 261964b2041d6e44097688fc8c03f8e1, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 26.75
+      value: 22.62
       objectReference: {fileID: 0}
     - target: {fileID: 5145908630625680140, guid: 261964b2041d6e44097688fc8c03f8e1, type: 3}
       propertyPath: m_LocalPosition.z
@@ -81284,7 +81284,7 @@ GameObject:
   - component: {fileID: 1677053725}
   - component: {fileID: 1677053724}
   - component: {fileID: 1677053723}
-  m_Layer: 2
+  m_Layer: 0
   m_Name: Walls  segment (1)
   m_TagString: Bouncy
   m_Icon: {fileID: 0}
@@ -82641,7 +82641,7 @@ GameObject:
   - component: {fileID: 1773446155}
   - component: {fileID: 1773446154}
   - component: {fileID: 1773446153}
-  m_Layer: 2
+  m_Layer: 0
   m_Name: rock spire (5)
   m_TagString: Bouncy
   m_Icon: {fileID: 0}
@@ -83730,7 +83730,7 @@ GameObject:
   - component: {fileID: 1786915278}
   - component: {fileID: 1786915277}
   - component: {fileID: 1786915276}
-  m_Layer: 2
+  m_Layer: 0
   m_Name: spire
   m_TagString: Bouncy
   m_Icon: {fileID: 0}
