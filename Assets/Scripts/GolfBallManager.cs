@@ -199,7 +199,10 @@ public class GolfBallManager : MonoBehaviour
     void Update()
     {
         //test.transform.rotation = Quaternion.Euler(Vector3.zero);
-
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Application.Quit();
+        }
 
         if (!inEndScreen)
         {
