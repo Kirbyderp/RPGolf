@@ -35,8 +35,16 @@ public class CameraController : MonoBehaviour
         {
             if ((hitInfo.point - camRotator.transform.position).magnitude < maxCamDistance)
             {
-                mainCamera.transform.localPosition *= (hitInfo.point - camRotator.transform.position).magnitude / curCamDistance;
-                curCamDistance = (hitInfo.point - camRotator.transform.position).magnitude;
+                if ((hitInfo.point - camRotator.transform.position).magnitude > 1.15f)
+                {
+                    mainCamera.transform.localPosition *= (hitInfo.point - camRotator.transform.position).magnitude / curCamDistance;
+                    curCamDistance = (hitInfo.point - camRotator.transform.position).magnitude;
+                }
+                else if (curCamDistance != 1.15f)
+                {
+                    mainCamera.transform.localPosition *= 1.15f / curCamDistance;
+                    curCamDistance = 1.15f;
+                }
             }
         }
         else if (curCamDistance < maxCamDistance)

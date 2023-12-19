@@ -7,6 +7,7 @@ public class Enemy : MonoBehaviour
     public int maxHP;
     public int expReward;
     public float bounciness;
+    public bool isGolem;
 
     private int curHP;
 
@@ -26,8 +27,16 @@ public class Enemy : MonoBehaviour
     //Returns true if the damage taken is enough to kill the enemy, false otherwise
     public bool TakeDamage(float velIn)
     {
-        Debug.Log(velIn);
-        curHP = (int)(curHP - velIn);
+        //Debug.Log(velIn);
+        if (isGolem && velIn > 30 && curHP > maxHP * .3f)
+        {
+            curHP = (int)(curHP + 30 - velIn);
+        }
+        else if (!isGolem || curHP < maxHP * .3f)
+        {
+            curHP = (int)(curHP - velIn);
+        }
+        
         
         if (curHP <= 0)
         {

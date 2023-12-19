@@ -17,7 +17,7 @@ public class LevelUpRewardUI : MonoBehaviour
         rewardName = GameObject.Find("Level Up " + ID + " Name").GetComponent<TMPro.TextMeshProUGUI>();
         use = GameObject.Find("Level Up " + ID + " Use").GetComponent<TMPro.TextMeshProUGUI>();
         desc = GameObject.Find("Level Up " + ID + " Desc").GetComponent<TMPro.TextMeshProUGUI>();
-        rewardImage = GameObject.Find("Level Up " + ID + " Image").GetComponent<Image>();
+        rewardImage = GameObject.Find("Level Up " + ID + " Background").GetComponent<Image>();
         golfBallManager = GameObject.Find("Golf Ball").GetComponent<GolfBallManager>();
         abilityCode = -1;
     }

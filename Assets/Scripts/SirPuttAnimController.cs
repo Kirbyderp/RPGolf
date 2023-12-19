@@ -8,6 +8,7 @@ public class SirPuttAnimController : MonoBehaviour
     private Animator animController;
     private GameObject triRotator, triRotatorCopy;
     private float animFrameNum = 0;
+    private float animSpeed = 1.5f;
 
     // Start is called before the first frame update
     void Start()
@@ -37,8 +38,8 @@ public class SirPuttAnimController : MonoBehaviour
 
     IEnumerator WaitForJump()
     {
-        yield return new WaitForSeconds(25 / 60f);
-        InvokeRepeating("JumpMovement", 0, 1/60f);
+        yield return new WaitForSeconds((25 / animSpeed) / 60f);
+        InvokeRepeating("JumpMovement", 0, 1 / (60 * animSpeed));
     }
 
     public void JumpMovement()
@@ -59,8 +60,27 @@ public class SirPuttAnimController : MonoBehaviour
 
     IEnumerator WaitForLand()
     {
-        yield return new WaitForSeconds(27 / 60f);
-        InvokeRepeating("LandMovement", 0, 1 / 60f);
+        float curRotation = triRotatorCopy.transform.rotation.eulerAngles.y;
+        golfBallManager.ResetSirPuttsalot();
+        if (!golfBallManager.CanRotateAtDegree30((int)(((curRotation + 15) % 360) / 30)))
+        {
+            for (int deg30 = 0; deg30 < 12; deg30++)
+            {
+                if (golfBallManager.CanRotateAtDegree30(deg30))
+                {
+                    triRotator.transform.rotation = Quaternion.Euler(triRotator.transform.rotation.eulerAngles.x,
+                                                                     deg30 * 30,
+                                                                     triRotator.transform.rotation.eulerAngles.z);
+                    triRotatorCopy.transform.rotation = Quaternion.Euler(triRotatorCopy.transform.rotation.eulerAngles.x,
+                                                                         deg30 * 30,
+                                                                         triRotatorCopy.transform.rotation.eulerAngles.z);
+
+                    break;
+                }
+            }
+        }
+        yield return new WaitForSeconds((27 / animSpeed) / 60f);
+        InvokeRepeating("LandMovement", 0, 1 / (60 * animSpeed));
     }
 
     public void LandMovement()
