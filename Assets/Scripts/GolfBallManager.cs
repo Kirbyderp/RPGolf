@@ -1314,9 +1314,6 @@ public class GolfBallManager : MonoBehaviour
 
     public void LoadNextScene()
     {
-        if (inEndScreen && !waitingOnEndAnim)
-        {
-            SceneManager.LoadScene(sceneToGoTo, LoadSceneMode.Single);
-        }
+        SceneManager.LoadScene(sceneToGoTo, LoadSceneMode.Single);
     }
 }
