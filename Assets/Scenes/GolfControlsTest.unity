@@ -343,7 +343,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 5888226017877151527, guid: a67309bc3ca7bad4183a0e7875e35eb7, type: 3}
       propertyPath: sceneToGoTo
-      value: Level 1
+      value: TitleScreen
       objectReference: {fileID: 0}
     - target: {fileID: 5888226017877151527, guid: a67309bc3ca7bad4183a0e7875e35eb7, type: 3}
       propertyPath: currentHolePar
