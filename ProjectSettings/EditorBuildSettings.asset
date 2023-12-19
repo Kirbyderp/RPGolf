@@ -14,7 +14,13 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Level 1.unity
     guid: 52c3e8061a8d84b449d0745fa258f6e1
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Dante_Golf_2.unity
     guid: cff715323dd83794f879d241c81da0d5
+  - enabled: 1
+    path: Assets/Scenes/Hole4_Cave.unity
+    guid: 2233e0e4409dec7489a7decadc5a9482
+  - enabled: 1
+    path: Assets/Scenes/Hole3_River.unity
+    guid: b117b594d43d2174988c2670fc0c41fb
   m_configObjects: {}
