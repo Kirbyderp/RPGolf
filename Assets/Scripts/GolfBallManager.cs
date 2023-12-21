@@ -25,6 +25,7 @@ public class GolfBallManager : MonoBehaviour
     private bool usedSpikeBall = false, inSpikeBallEndAnim = false;
     private GameObject spikesModel;
     private bool usingFireball = false, usedFireball = false;
+    private GameObject fireParticles;
     private bool usingGlide = false, usedGlide = false;
     private bool usedDoOver = false;
     private bool usedExplosion = false;
@@ -39,6 +40,7 @@ public class GolfBallManager : MonoBehaviour
     private Vector3 mouseStarterPos, mousePos;
     private bool planningShot = false, mouseOverLevelUp = false;
     private GameObject powerBar, triRotator, tri, triRotatorCopy, hitDir2D, hitDir2DUI;
+    private GameObject straightArrow, leftArrow, rightArrow;
     private float barPercentage = 0;
     private int curShotType = 0; //0 = putt, 1 = chip, 2 = curve left, 3 = curve right
     private SirPuttAnimController sirPuttAnim;
@@ -73,6 +75,7 @@ public class GolfBallManager : MonoBehaviour
     private GameObject holeEndUIBackground;
     private string sceneToGoTo;
     private TMPro.TextMeshProUGUI ehStrokeText, ehParText, ehRewardText;
+    private GameObject cutsceneBack;
 
     //KeyCodes
     KeyCode chipShotKey = KeyCode.W;
@@ -124,6 +127,11 @@ public class GolfBallManager : MonoBehaviour
         triRotatorCopy = GameObject.Find("Tri Rotator Copy");
         hitDir2D = GameObject.Find("2D Hit Dir Rotator");
         hitDir2DUI = GameObject.Find("Ball Hit Direction UI");
+        straightArrow = GameObject.Find("Arrow Head");
+        leftArrow = GameObject.Find("Curve Left Arrow");
+        rightArrow = GameObject.Find("Curve Right Arrow");
+        leftArrow.SetActive(false);
+        rightArrow.SetActive(false);
         hitDir2DUI.SetActive(false);
         tri.SetActive(false);
         golfBallRb = GetComponent<Rigidbody>();
@@ -163,6 +171,8 @@ public class GolfBallManager : MonoBehaviour
         sirPuttAnim = GameObject.Find("Sir Puttsalot").GetComponent<SirPuttAnimController>();
 
         spikesModel = GameObject.Find("Golf Ball Spikes");
+        fireParticles = GameObject.Find("Fire Particles");
+        fireParticles.SetActive(false);
         leftCurveLoc = GameObject.Find("Left Curve Loc");
         rightCurveLoc = GameObject.Find("Right Curve Loc");
 
@@ -172,6 +182,9 @@ public class GolfBallManager : MonoBehaviour
         ehStrokeText = GameObject.Find("End Hole Stroke Text").GetComponent<TMPro.TextMeshProUGUI>();
         ehParText = GameObject.Find("End Hole Par Text").GetComponent<TMPro.TextMeshProUGUI>();
         ehRewardText = GameObject.Find("End Hole EXP Reward Text").GetComponent<TMPro.TextMeshProUGUI>();
+
+        cutsceneBack = GameObject.Find("Cutscene Background");
+        cutsceneBack.SetActive(false);
     }
 
     // Update is called once per frame
@@ -247,6 +260,9 @@ public class GolfBallManager : MonoBehaviour
                         puttIcon.SetActive(true);
                         chipIcon.SetActive(false);
                         curveIcon.SetActive(false);
+                        straightArrow.SetActive(true);
+                        leftArrow.SetActive(false);
+                        rightArrow.SetActive(false);
                         Debug.Log("Current Shot Type: Putt");
                     }
                     else
@@ -255,6 +271,9 @@ public class GolfBallManager : MonoBehaviour
                         puttIcon.SetActive(false);
                         chipIcon.SetActive(true);
                         curveIcon.SetActive(false);
+                        straightArrow.SetActive(true);
+                        leftArrow.SetActive(false);
+                        rightArrow.SetActive(false);
                         Debug.Log("Current Shot Type: Chip");
                     }
                 }
@@ -267,6 +286,9 @@ public class GolfBallManager : MonoBehaviour
                         puttIcon.SetActive(false);
                         chipIcon.SetActive(false);
                         curveIcon.SetActive(true);
+                        straightArrow.SetActive(false);
+                        leftArrow.SetActive(false);
+                        rightArrow.SetActive(true);
                         Debug.Log("Current Shot Type: Curve Right");
                     }
                     else if (curShotType == 3)
@@ -275,6 +297,9 @@ public class GolfBallManager : MonoBehaviour
                         puttIcon.SetActive(true);
                         chipIcon.SetActive(false);
                         curveIcon.SetActive(false);
+                        straightArrow.SetActive(true);
+                        leftArrow.SetActive(false);
+                        rightArrow.SetActive(false);
                         Debug.Log("Current Shot Type: Putt");
                     }
                     else
@@ -283,6 +308,9 @@ public class GolfBallManager : MonoBehaviour
                         puttIcon.SetActive(false);
                         chipIcon.SetActive(false);
                         curveIcon.SetActive(true);
+                        straightArrow.SetActive(false);
+                        leftArrow.SetActive(true);
+                        rightArrow.SetActive(false);
                         Debug.Log("Current Shot Type: Curve Left");
                     }
                 }
@@ -293,11 +321,13 @@ public class GolfBallManager : MonoBehaviour
                     if (usingFireball)
                     {
                         Debug.Log("Cancelled Fireball");
+                        fireParticles.SetActive(false);
                         usingFireball = false;
                     }
                     else
                     {
                         Debug.Log("Using Fireball");
+                        fireParticles.SetActive(true);
                         usingFireball = true;
                     }
                 }
@@ -462,6 +492,7 @@ public class GolfBallManager : MonoBehaviour
                     if (fireballTimer >= fireballDuration)
                     {
                         Debug.Log("Fireball Duration Over");
+                        fireParticles.SetActive(false);
                         usingFireball = false;
                         usedFireball = true;
                     }
@@ -672,6 +703,7 @@ public class GolfBallManager : MonoBehaviour
         fireballTimer = 0;
         if (!usingFireball)
         {
+            fireParticles.SetActive(true);
             usingFireball = true;
         }
     }
@@ -1105,6 +1137,7 @@ public class GolfBallManager : MonoBehaviour
         golfBallRb.constraints = RigidbodyConstraints.FreezeAll;
         ehStrokeText.text = numStrokes + "";
         ehParText.text = parIn + "";
+        player.RecordStrokesForHole(numStrokes);
         if (!inLevelUpScreen)
         {
             inEndScreen = true;
@@ -1231,6 +1264,32 @@ public class GolfBallManager : MonoBehaviour
             waitingOnEndAnim = false;
             holeEndUIBackground.GetComponent<RectTransform>().localPosition = new Vector3(0, 0, 0);
             holeEndAnimCount = 0;
+        }
+    }
+
+    public void LoadCutscene()
+    {
+        string pageToLoad = "";
+        switch (SceneManager.GetActiveScene().name)
+        {
+            case "Hole1_Cliff":
+                pageToLoad = "Pg_1_2nd_Half";
+                break;
+            case "Dante_Golf_2":
+                pageToLoad = "Pg_2";
+                break;
+            case "Hole3_River":
+                pageToLoad = "Pg_3";
+                break;
+            case "Hole4_Cave":
+                pageToLoad = "Pg_4";
+                break;
+            default:
+                break;
+        }
+        if (pageToLoad != "")
+        {
+            Resources.Load("Narration Elements/" + pageToLoad);
         }
     }
 

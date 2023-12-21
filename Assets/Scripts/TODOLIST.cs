@@ -1,10 +1,12 @@
 /* 
- * Code Frog Teleporter (DO FIRST)
- * 
- * Shot Type Indicator
- * Make Main Menu
- * Fireball Visuals
  * Cutscenes
+     * NEED ALL SCENE NAMES
+     * NEED FUNCTIONAL ASSETS
+ * 
+ * Make Main Menu
+    * Finish Credits Text
+    * Make play button functional (waiting on cutscenes)
+ * 
  * Ball Hit SFX
  * Background Music
  * 
